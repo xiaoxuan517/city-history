@@ -3,13 +3,20 @@ import {
   Bot,
   CloudDownload,
   Download,
+  Eye,
   FileText,
   Landmark,
   RefreshCw,
   Search,
 } from "lucide-react";
 
-import { addOfflineDownload, getLocalDownloadFileUrl, listGazetteerFiles, listOfflineDownloadTasks } from "../api";
+import {
+  addOfflineDownload,
+  getLocalDownloadFileUrl,
+  getLocalDownloadPreviewUrl,
+  listGazetteerFiles,
+  listOfflineDownloadTasks,
+} from "../api";
 import type { AListTask, GazetteerFile, KnowledgeBase } from "../types";
 import UserMenu from "./UserMenu";
 
@@ -407,6 +414,22 @@ function GazetteerRow({
         >
           <Download size={16} />
           <span>下载到本地</span>
+        </button>
+        <button
+          type="button"
+          className="text-action"
+          title="在线预览"
+          disabled={!canDownloadLocal}
+          onClick={() => {
+            if (!isAuthenticated) {
+              onLogin();
+              return;
+            }
+            if (downloadTask) window.open(getLocalDownloadPreviewUrl(downloadTask.id), "_blank", "noopener,noreferrer");
+          }}
+        >
+          <Eye size={16} />
+          <span>在线预览</span>
         </button>
         <button
           type="button"

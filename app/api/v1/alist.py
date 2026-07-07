@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import mimetypes
+
 from fastapi import APIRouter, Depends
 from fastapi.responses import FileResponse
 
@@ -47,3 +49,18 @@ def download_local_task_file(
 ) -> FileResponse:
     file_path = alist_service.get_local_download_path(task_id)
     return FileResponse(path=file_path, filename=file_path.name, media_type="application/octet-stream")
+
+
+@router.get("/offline_download/tasks/{task_id}/preview")
+def preview_local_task_file(
+    task_id: str,
+    alist_service: AListService = Depends(get_alist_service),
+) -> FileResponse:
+    file_path = alist_service.get_local_download_path(task_id)
+    media_type = mimetypes.guess_type(file_path.name)[0] or "application/octet-stream"
+    return FileResponse(
+        path=file_path,
+        filename=file_path.name,
+        media_type=media_type,
+        content_disposition_type="inline",
+    )

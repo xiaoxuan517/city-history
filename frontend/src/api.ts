@@ -45,6 +45,10 @@ export function getLocalDownloadFileUrl(taskId: string) {
   return apiUrl(`/api/fs/offline_download/tasks/${encodeURIComponent(taskId)}/file`);
 }
 
+export function getLocalDownloadPreviewUrl(taskId: string) {
+  return apiUrl(`/api/fs/offline_download/tasks/${encodeURIComponent(taskId)}/preview`);
+}
+
 async function request(path: string, options: RequestInit = {}, token?: string) {
   const response = await fetch(apiUrl(path), {
     ...options,
