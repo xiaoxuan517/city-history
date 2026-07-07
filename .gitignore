@@ -1,0 +1,39 @@
+# Python
+__pycache__/
+*.py[cod]
+
+# Virtual environments
+.venv/
+venv/
+
+# Local environment files
+.env
+
+# IDE / editor
+.idea/
+.vscode/
+
+# Test and tool caches
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Frontend
+frontend/node_modules/
+frontend/dist/
+
+# Local vector store data
+storage/chroma/
+storage/exports/
+storage/uploads/
+storage/*.sqlite
+storage/*.sqlite3
+storage/*.jsonl
+app/storage/
+downloads/*
+!downloads/.gitkeep
+logs/
+
+# OS files
+.DS_Store
+Thumbs.db

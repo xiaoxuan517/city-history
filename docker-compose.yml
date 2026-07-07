@@ -1,0 +1,156 @@
+services:
+  postgres:
+    image: pgvector/pgvector:pg17
+    environment:
+      POSTGRES_USER: rag
+      POSTGRES_PASSWORD: rag
+      POSTGRES_DB: rag
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U rag -d rag"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  api:
+    build:
+      context: .
+    environment:
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-change-me}
+      OPENAI_BASE_URL: ${OPENAI_BASE_URL:-}
+      CHAT_MODEL: ${CHAT_MODEL:-gpt-4.1-mini}
+      EMBEDDING_API_KEY: ${EMBEDDING_API_KEY:-}
+      EMBEDDING_BASE_URL: ${EMBEDDING_BASE_URL:-}
+      EMBEDDING_MODEL: ${EMBEDDING_MODEL:-bge-m3}
+      EMBEDDING_DIMENSION: ${EMBEDDING_DIMENSION:-1024}
+      DATABASE_URL: postgresql+psycopg://rag:rag@postgres:5432/rag
+      REDIS_URL: redis://redis:6379/0
+      CELERY_BROKER_URL: redis://redis:6379/1
+      CELERY_RESULT_BACKEND: redis://redis:6379/2
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY:-change-me-in-production}
+      JWT_ALGORITHM: ${JWT_ALGORITHM:-HS256}
+      ACCESS_TOKEN_EXPIRE_MINUTES: ${ACCESS_TOKEN_EXPIRE_MINUTES:-60}
+      UPLOAD_DIR: /app/storage/uploads
+      RATE_LIMIT_ENABLED: ${RATE_LIMIT_ENABLED:-true}
+      RATE_LIMIT_REQUESTS: ${RATE_LIMIT_REQUESTS:-60}
+      RATE_LIMIT_WINDOW_SECONDS: ${RATE_LIMIT_WINDOW_SECONDS:-60}
+      HOT_QUESTION_CACHE_ENABLED: ${HOT_QUESTION_CACHE_ENABLED:-true}
+      HOT_QUESTION_CACHE_TTL_SECONDS: ${HOT_QUESTION_CACHE_TTL_SECONDS:-300}
+      LANGSMITH_TRACING: ${LANGSMITH_TRACING:-false}
+      LANGSMITH_API_KEY: ${LANGSMITH_API_KEY:-}
+      LANGSMITH_PROJECT: ${LANGSMITH_PROJECT:-langchain-rag}
+      LANGSMITH_ENDPOINT: ${LANGSMITH_ENDPOINT:-}
+      TOKEN_INPUT_COST_PER_1K: ${TOKEN_INPUT_COST_PER_1K:-0}
+      TOKEN_OUTPUT_COST_PER_1K: ${TOKEN_OUTPUT_COST_PER_1K:-0}
+      LOG_DIR: /app/logs
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      LOG_FILE_NAME: ${LOG_FILE_NAME:-app.log}
+      CHECKPOINTER_TYPE: ${CHECKPOINTER_TYPE:-sqlite}
+      CHECKPOINTER_SQLITE_PATH: /app/storage/checkpoints.sqlite3
+      FEEDBACK_LOG_PATH: /app/storage/feedback.jsonl
+      TOP_K: ${TOP_K:-3}
+      RETRIEVAL_SEARCH_TYPE: ${RETRIEVAL_SEARCH_TYPE:-similarity}
+      RETRIEVAL_FETCH_K: ${RETRIEVAL_FETCH_K:-8}
+      RERANKER_ENABLED: ${RERANKER_ENABLED:-false}
+      RERANKER_STRATEGY: ${RERANKER_STRATEGY:-embedding_lexical}
+      RETRIEVAL_MAX_CONTEXT_CHARS: ${RETRIEVAL_MAX_CONTEXT_CHARS:-4000}
+      CHUNK_SIZE: ${CHUNK_SIZE:-800}
+      CHUNK_OVERLAP: ${CHUNK_OVERLAP:-120}
+    command: >
+      sh -c "uv run alembic upgrade head &&
+      uv run python -m app.main web --host 0.0.0.0 --port 8000"
+    ports:
+      - "8000:8000"
+    volumes:
+      - app_storage:/app/storage
+      - app_logs:/app/logs
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "uv",
+          "run",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/api/v1/health', timeout=5).read()",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  worker:
+    build:
+      context: .
+    environment:
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-change-me}
+      OPENAI_BASE_URL: ${OPENAI_BASE_URL:-}
+      CHAT_MODEL: ${CHAT_MODEL:-gpt-4.1-mini}
+      EMBEDDING_API_KEY: ${EMBEDDING_API_KEY:-}
+      EMBEDDING_BASE_URL: ${EMBEDDING_BASE_URL:-}
+      EMBEDDING_MODEL: ${EMBEDDING_MODEL:-bge-m3}
+      EMBEDDING_DIMENSION: ${EMBEDDING_DIMENSION:-1024}
+      DATABASE_URL: postgresql+psycopg://rag:rag@postgres:5432/rag
+      REDIS_URL: redis://redis:6379/0
+      CELERY_BROKER_URL: redis://redis:6379/1
+      CELERY_RESULT_BACKEND: redis://redis:6379/2
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY:-change-me-in-production}
+      JWT_ALGORITHM: ${JWT_ALGORITHM:-HS256}
+      ACCESS_TOKEN_EXPIRE_MINUTES: ${ACCESS_TOKEN_EXPIRE_MINUTES:-60}
+      UPLOAD_DIR: /app/storage/uploads
+      RATE_LIMIT_ENABLED: ${RATE_LIMIT_ENABLED:-true}
+      RATE_LIMIT_REQUESTS: ${RATE_LIMIT_REQUESTS:-60}
+      RATE_LIMIT_WINDOW_SECONDS: ${RATE_LIMIT_WINDOW_SECONDS:-60}
+      HOT_QUESTION_CACHE_ENABLED: ${HOT_QUESTION_CACHE_ENABLED:-true}
+      HOT_QUESTION_CACHE_TTL_SECONDS: ${HOT_QUESTION_CACHE_TTL_SECONDS:-300}
+      LANGSMITH_TRACING: ${LANGSMITH_TRACING:-false}
+      LANGSMITH_API_KEY: ${LANGSMITH_API_KEY:-}
+      LANGSMITH_PROJECT: ${LANGSMITH_PROJECT:-langchain-rag}
+      LANGSMITH_ENDPOINT: ${LANGSMITH_ENDPOINT:-}
+      TOKEN_INPUT_COST_PER_1K: ${TOKEN_INPUT_COST_PER_1K:-0}
+      TOKEN_OUTPUT_COST_PER_1K: ${TOKEN_OUTPUT_COST_PER_1K:-0}
+      LOG_DIR: /app/logs
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      LOG_FILE_NAME: ${LOG_FILE_NAME:-worker.log}
+      CHECKPOINTER_TYPE: ${CHECKPOINTER_TYPE:-sqlite}
+      CHECKPOINTER_SQLITE_PATH: /app/storage/checkpoints.sqlite3
+      FEEDBACK_LOG_PATH: /app/storage/feedback.jsonl
+      TOP_K: ${TOP_K:-3}
+      RETRIEVAL_SEARCH_TYPE: ${RETRIEVAL_SEARCH_TYPE:-similarity}
+      RETRIEVAL_FETCH_K: ${RETRIEVAL_FETCH_K:-8}
+      RERANKER_ENABLED: ${RERANKER_ENABLED:-false}
+      RERANKER_STRATEGY: ${RERANKER_STRATEGY:-embedding_lexical}
+      RETRIEVAL_MAX_CONTEXT_CHARS: ${RETRIEVAL_MAX_CONTEXT_CHARS:-4000}
+      CHUNK_SIZE: ${CHUNK_SIZE:-800}
+      CHUNK_OVERLAP: ${CHUNK_OVERLAP:-120}
+    command: uv run celery -A app.workers.celery_app.celery_app worker --loglevel=INFO
+    volumes:
+      - app_storage:/app/storage
+      - app_logs:/app/logs
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+volumes:
+  postgres_data:
+  app_storage:
+  app_logs:

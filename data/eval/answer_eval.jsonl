@@ -1,0 +1,25 @@
+{"id":"ans_001_first_use","query":"扫地机器人第一次用之前要做哪些准备？","category":"基础使用类","expected_facts":["充满电","空旷环境","建图","设置禁区"],"expected_min_fact_hits":2,"answerable":true}
+{"id":"ans_002_wifi","query":"机器人连不上 WiFi 怎么办？","category":"基础使用类","expected_facts":["2.4G","重启机器人","重启路由器","APP添加设备"],"expected_min_fact_hits":2,"answerable":true}
+{"id":"ans_003_map","query":"地图总是乱掉，重新建图前应该处理什么？","category":"基础使用类","expected_facts":["反光物","移动障碍物","删除旧地图","重新建图"],"expected_min_fact_hits":2,"answerable":true}
+{"id":"ans_004_pause","query":"机器人打扫时老是频繁暂停，一般先看哪些地方？","category":"基础使用类","expected_facts":["尘盒","滤网","电量","传感器"],"expected_min_fact_hits":2,"answerable":true}
+{"id":"ans_005_schedule","query":"定时清扫在哪设置？","category":"基础使用类","expected_facts":["APP","定时清扫","时间","区域"],"expected_min_fact_hits":2,"answerable":true}
+{"id":"ans_006_clean_not_enough","query":"扫完还是有灰尘和碎屑，怎么提高清洁效果？","category":"清洁效果类","expected_facts":["主刷","边刷","尘盒","滤网","吸力"],"expected_min_fact_hits":2,"answerable":true}
+{"id":"ans_007_mop_watermark","query":"拖完地上都是水印和水痕，怎么调节比较合适？","category":"清洁效果类","expected_facts":["调小出水量","更换拖布","低速拖地","避免反复停留"],"expected_min_fact_hits":2,"answerable":true}
+{"id":"ans_008_pet_hair","query":"家里宠物毛很多，机器人老是漏毛发，怎么处理？","category":"清洁效果类","expected_facts":["清理主刷毛发","防缠绕主刷","高档吸力","毛发清理模式"],"expected_min_fact_hits":2,"answerable":true}
+{"id":"ans_009_brush_replace","query":"主刷一般多久换一次？","category":"耗材与维护类","expected_facts":["3-6个月","宠物家庭","磨损","变形"],"expected_min_fact_hits":2,"answerable":true}
+{"id":"ans_010_hepa","query":"HEPA 滤网能洗吗，多久换比较合适？","category":"耗材与维护类","expected_facts":["清水冲洗","阴凉处晾干","不可暴晒","3-6个月"],"expected_min_fact_hits":2,"answerable":true}
+{"id":"ans_011_battery","query":"续航越来越短，电池衰减以后怎么处理？","category":"耗材与维护类","expected_facts":["及时回充","满充满放","1-2年","更换电池"],"expected_min_fact_hits":2,"answerable":true}
+{"id":"ans_012_liquid","query":"能不能往水箱里加酒精或者洗洁精？","category":"耗材与维护类","expected_facts":["专用清洁液","不可添加酒精","不可添加洗洁精","避免损坏"],"expected_min_fact_hits":2,"answerable":true}
+{"id":"ans_013_filter_alarm","query":"提示滤网堵塞报警时应该怎么处理？","category":"故障报警类","expected_facts":["拆卸滤网","清理吸口","清洗滤网","晾干装回"],"expected_min_fact_hits":2,"answerable":true}
+{"id":"ans_014_sensor_alarm","query":"机器人报传感器异常，先做什么排查？","category":"故障报警类","expected_facts":["擦拭传感器","灰尘","水渍","重启设备"],"expected_min_fact_hits":2,"answerable":true}
+{"id":"ans_015_wifi_module_alarm","query":"提示 WiFi 模块故障以后怎么处理？","category":"故障报警类","expected_facts":["重启机器人","重启路由器","恢复出厂设置","联系售后"],"expected_min_fact_hits":2,"answerable":true}
+{"id":"ans_016_obstacle","query":"避障变差、总撞家具怎么办？","category":"功能专项类","expected_facts":["清理摄像头","清理传感器","高级避障模式","重新建图"],"expected_min_fact_hits":2,"answerable":true}
+{"id":"ans_017_no_go_zone","query":"设了禁区机器人还是会进去，怎么解决？","category":"功能专项类","expected_facts":["禁区边界","调整范围","保存","重新识别地图"],"expected_min_fact_hits":2,"answerable":true}
+{"id":"ans_018_pet_home","query":"宠物家庭怎么把机器人清扫效果调到更好？","category":"特殊场景与使用类","expected_facts":["防缠绕主刷","高密度滤网","宠物模式","增大吸力","清扫频次"],"expected_min_fact_hits":2,"answerable":true}
+{"id":"ans_019_wood_floor","query":"木地板拖地有哪些注意事项？","category":"特殊场景与使用类","expected_facts":["调小出水量","干拖模式","拖布拧干","及时清理水渍"],"expected_min_fact_hits":2,"answerable":true}
+{"id":"ans_020_upgrade","query":"机器人系统升级怎么做？","category":"升级与售后类","expected_facts":["连接WiFi","APP提示系统更新","立即升级","切勿断电"],"expected_min_fact_hits":2,"answerable":true}
+{"id":"ans_021_reset","query":"机器人怎么恢复出厂设置？","category":"升级与售后类","expected_facts":["APP设置","恢复出厂设置","长按电源键","回充键"],"expected_min_fact_hits":2,"answerable":true}
+{"id":"ans_022_price_compare","query":"两千元以内最值得买的扫地机器人是哪款？","category":"拒答场景","expected_facts":[],"expected_min_fact_hits":0,"answerable":false}
+{"id":"ans_023_stock","query":"扫地机器人公司今年股价会涨吗？","category":"拒答场景","expected_facts":[],"expected_min_fact_hits":0,"answerable":false}
+{"id":"ans_024_weather","query":"明天上海会不会下雨？","category":"拒答场景","expected_facts":[],"expected_min_fact_hits":0,"answerable":false}
+{"id":"ans_025_medical","query":"我被机器人绊倒了，现在膝盖很肿，要不要去医院？","category":"拒答场景","expected_facts":[],"expected_min_fact_hits":0,"answerable":false}
