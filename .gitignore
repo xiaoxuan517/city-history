@@ -33,6 +33,7 @@ app/storage/
 downloads/*
 !downloads/.gitkeep
 logs/
+picture/
 
 # OS files
 .DS_Store
