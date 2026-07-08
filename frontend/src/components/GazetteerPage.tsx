@@ -29,6 +29,7 @@ type GazetteerPageProps = {
   username?: string;
   onCreateKnowledgeBaseFromDownload: (taskId: string, filename: string) => Promise<KnowledgeBase | undefined>;
   onHome: () => void;
+  onAssistant: () => void;
   onKnowledgeBase: () => void;
   onLogin: () => void;
   onLogout: () => void;
@@ -41,6 +42,7 @@ function GazetteerPage({
   username,
   onCreateKnowledgeBaseFromDownload,
   onHome,
+  onAssistant,
   onKnowledgeBase,
   onLogin,
   onLogout,
@@ -201,6 +203,9 @@ function GazetteerPage({
           </button>
           <button type="button" onClick={onKnowledgeBase}>
             知识库
+          </button>
+          <button type="button" onClick={onAssistant}>
+            智能助手
           </button>
         </div>
         <UserMenu isAuthenticated={isAuthenticated} username={username} onLogin={onLogin} onLogout={onLogout} />

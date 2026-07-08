@@ -62,6 +62,17 @@ export type KnowledgeBaseWithDocumentResponse = {
   document: KnowledgeDocument;
 };
 
+export type AssistantAction = {
+  type: string;
+  payload: Record<string, unknown>;
+};
+
+export type AssistantChatResponse = {
+  answer: string;
+  actions: AssistantAction[];
+  state: Record<string, unknown>;
+};
+
 export type SearchType = "similarity" | "mmr" | "hybrid";
 
 export type RetrievalProfile = {

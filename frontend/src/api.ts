@@ -1,6 +1,7 @@
 import type {
   KnowledgeBase,
   KnowledgeBaseWithDocumentResponse,
+  AssistantChatResponse,
   AListFileListResponse,
   AListOfflineDownloadResponse,
   AListTaskListResponse,
@@ -225,6 +226,18 @@ export async function listChatMessages(token: string, sessionId: number): Promis
 
 export async function deleteChatSession(token: string, sessionId: number): Promise<void> {
   await request(`/api/v1/chat-sessions/${sessionId}`, { method: "DELETE" }, token);
+}
+
+export async function chatWithAssistant(
+  token: string,
+  payload: { message: string; state?: Record<string, unknown> },
+): Promise<AssistantChatResponse> {
+  const response = await postJson(
+    "/api/v1/assistant/chat",
+    { message: payload.message, state: payload.state ?? {} },
+    token,
+  );
+  return response.json();
 }
 
 export async function listAListFiles(payload: {

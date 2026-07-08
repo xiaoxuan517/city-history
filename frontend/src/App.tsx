@@ -24,6 +24,7 @@ import {
   updateKnowledgeBase,
   uploadDocument,
 } from "./api";
+import AssistantPage from "./components/AssistantPage";
 import AuthPanel from "./components/AuthPanel";
 import ChatPanel from "./components/ChatPanel";
 import DocumentPanel from "./components/DocumentPanel";
@@ -57,10 +58,11 @@ const welcomeMessage: ChatMessage = {
 const tokenStorageKey = "rag_access_token";
 const userStorageKey = "rag_current_user";
 const authNoticeStorageKey = "rag_auth_notice";
-type AppView = "home" | "auth" | "kbList" | "workspace" | "gazetteers";
+type AppView = "home" | "auth" | "kbList" | "workspace" | "gazetteers" | "assistant";
 
 function pathToView(pathname: string): AppView {
   if (pathname.startsWith("/login")) return "auth";
+  if (pathname.startsWith("/assistant")) return "assistant";
   if (/^\/workspace\/\d+/.test(pathname)) return "workspace";
   if (pathname.startsWith("/workspace")) return "kbList";
   if (pathname.startsWith("/gazetteers")) return "gazetteers";
@@ -152,7 +154,7 @@ function App() {
   }, [apiToken, currentUser, view]);
 
   useEffect(() => {
-    if ((view === "kbList" || view === "workspace") && !apiToken) {
+    if ((view === "kbList" || view === "workspace" || view === "assistant") && !apiToken) {
       navigateTo("auth");
     }
   }, [apiToken, view]);
@@ -270,6 +272,8 @@ function App() {
               : "/workspace"
           : nextView === "gazetteers"
             ? "/gazetteers"
+            : nextView === "assistant"
+              ? "/assistant"
             : "/";
     if (window.location.pathname !== nextPath) {
       window.history.pushState(null, "", nextPath);
@@ -742,6 +746,7 @@ function App() {
         username={currentUser?.username}
         onEnterLibrary={() => navigateTo("gazetteers")}
         onEnterKnowledgeBase={() => navigateTo("kbList")}
+        onEnterAssistant={() => navigateTo("assistant")}
         onLogin={() => navigateTo("auth")}
         onLogout={logout}
       />
@@ -755,6 +760,7 @@ function App() {
         isAuthenticated={Boolean(apiToken && currentUser)}
         username={currentUser?.username}
         onHome={() => navigateTo("home")}
+        onAssistant={() => navigateTo("assistant")}
         onCreateKnowledgeBaseFromDownload={createKbFromDownload}
         onKnowledgeBase={() => navigateTo("kbList")}
         onLogin={() => navigateTo("auth")}
@@ -764,7 +770,24 @@ function App() {
     );
   }
 
-  if (view === "auth" || (view === "workspace" && (!apiToken || !currentUser))) {
+  if (view === "assistant" && apiToken && currentUser) {
+    return (
+      <AssistantPage
+        apiStatus={apiStatus}
+        apiToken={apiToken}
+        isAuthenticated={Boolean(apiToken && currentUser)}
+        username={currentUser?.username}
+        onHome={() => navigateTo("home")}
+        onGazetteers={() => navigateTo("gazetteers")}
+        onKnowledgeBase={() => navigateTo("kbList")}
+        onLogin={() => navigateTo("auth")}
+        onLogout={logout}
+        onOpenKnowledgeBase={openKnowledgeBase}
+      />
+    );
+  }
+
+  if (view === "auth" || ((view === "workspace" || view === "assistant") && (!apiToken || !currentUser))) {
     return <AuthPanel apiStatus={apiStatus} notice={authNotice} onAuthenticated={handleAuthenticated} />;
   }
 
@@ -777,6 +800,7 @@ function App() {
         knowledgeBases={knowledgeBases}
         pending={workspacePending}
         onCreateFromGazetteer={() => navigateTo("gazetteers")}
+        onAssistant={() => navigateTo("assistant")}
         onHome={() => navigateTo("home")}
         onLibrary={() => navigateTo("gazetteers")}
         onLogin={() => navigateTo("auth")}
@@ -800,6 +824,9 @@ function App() {
           </button>
           <button type="button" className="active" onClick={() => navigateTo("kbList")}>
             知识库
+          </button>
+          <button type="button" onClick={() => navigateTo("assistant")}>
+            智能助手
           </button>
         </div>
         <UserMenu

@@ -19,6 +19,7 @@ type HomePageProps = {
   username?: string;
   onEnterLibrary: () => void;
   onEnterKnowledgeBase: () => void;
+  onEnterAssistant: () => void;
   onLogin: () => void;
   onLogout: () => void;
 };
@@ -67,6 +68,7 @@ function HomePage({
   username,
   onEnterLibrary,
   onEnterKnowledgeBase,
+  onEnterAssistant,
   onLogin,
   onLogout,
 }: HomePageProps) {
@@ -83,6 +85,9 @@ function HomePage({
           </button>
           <button type="button" onClick={onEnterKnowledgeBase}>
             知识库
+          </button>
+          <button type="button" onClick={onEnterAssistant}>
+            智能助手
           </button>
         </div>
         <UserMenu isAuthenticated={isAuthenticated} username={username} onLogin={onLogin} onLogout={onLogout} />
@@ -104,6 +109,10 @@ function HomePage({
             <button className="home-secondary" type="button" onClick={onEnterKnowledgeBase}>
               <Bot size={18} />
               创建问答知识库
+            </button>
+            <button className="home-secondary" type="button" onClick={onEnterAssistant}>
+              <Sparkles size={18} />
+              智能检索下载
             </button>
           </div>
           <div className="hero-status">

@@ -27,6 +27,10 @@ class KnowledgeBaseService:
         statement = select(KnowledgeBase).where(KnowledgeBase.user_id == user_id).order_by(KnowledgeBase.created_at.desc())
         return list(session.scalars(statement))
 
+    def get_by_name_for_user(self, session: Session, *, user_id: int, name: str) -> KnowledgeBase | None:
+        statement = select(KnowledgeBase).where(KnowledgeBase.user_id == user_id, KnowledgeBase.name == name.strip())
+        return session.scalar(statement)
+
     def get_for_user(self, session: Session, *, user_id: int, kb_id: int) -> KnowledgeBase:
         statement = select(KnowledgeBase).where(KnowledgeBase.id == kb_id, KnowledgeBase.user_id == user_id)
         knowledge_base = session.scalar(statement)

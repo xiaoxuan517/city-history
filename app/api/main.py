@@ -12,6 +12,7 @@ from fastapi.staticfiles import StaticFiles
 from app.api.errors import register_error_handlers
 from app.api.rate_limit import enforce_rate_limit
 from app.api.v1.alist import router as alist_router
+from app.api.v1.assistant import router as assistant_router
 from app.api.v1.auth import router as auth_router
 from app.api.v1.chat import router as chat_router
 from app.api.v1.documents import router as document_router
@@ -65,6 +66,7 @@ app.include_router(knowledge_base_router, dependencies=[Depends(enforce_rate_lim
 app.include_router(document_router, dependencies=[Depends(enforce_rate_limit)])
 app.include_router(chat_router, dependencies=[Depends(enforce_rate_limit)])
 app.include_router(prompt_router, dependencies=[Depends(enforce_rate_limit)])
+app.include_router(assistant_router, dependencies=[Depends(enforce_rate_limit)])
 
 
 @app.get("/", include_in_schema=False)
@@ -89,6 +91,11 @@ def workspace_detail_index(_: str) -> FileResponse:
 
 @app.get("/gazetteers", include_in_schema=False)
 def gazetteers_index() -> FileResponse:
+    return FileResponse(FRONTEND_DIST_DIR / "index.html")
+
+
+@app.get("/assistant", include_in_schema=False)
+def assistant_index() -> FileResponse:
     return FileResponse(FRONTEND_DIST_DIR / "index.html")
 
 
