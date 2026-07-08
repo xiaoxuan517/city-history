@@ -20,6 +20,9 @@ import type {
 
 const apiBaseUrl = (import.meta.env.VITE_API_BASE_URL || "").replace(/\/$/, "");
 const gazetteerFileRequests = new Map<string, Promise<GazetteerFileListResponse>>();
+const authNoticeStorageKey = "rag_auth_notice";
+const tokenStorageKey = "rag_access_token";
+const userStorageKey = "rag_current_user";
 
 export class ApiRequestError extends Error {
   status: number;
@@ -63,7 +66,14 @@ async function request(path: string, options: RequestInit = {}, token?: string) 
     const detail = payload.detail || payload.error?.message || `HTTP ${response.status}`;
     const code = payload.error?.code;
     if (response.status === 401 && token) {
+      localStorage.removeItem(tokenStorageKey);
+      localStorage.removeItem(userStorageKey);
+      sessionStorage.setItem(authNoticeStorageKey, "登录已过期，请重新登录。");
       window.dispatchEvent(new CustomEvent("rag:auth-expired"));
+      if (!window.location.pathname.startsWith("/login")) {
+        window.history.pushState(null, "", "/login");
+        window.dispatchEvent(new PopStateEvent("popstate"));
+      }
     }
     throw new ApiRequestError(detail, { status: response.status, code });
   }

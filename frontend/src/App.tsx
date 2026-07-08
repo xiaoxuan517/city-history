@@ -56,6 +56,7 @@ const welcomeMessage: ChatMessage = {
 
 const tokenStorageKey = "rag_access_token";
 const userStorageKey = "rag_current_user";
+const authNoticeStorageKey = "rag_auth_notice";
 type AppView = "home" | "auth" | "kbList" | "workspace" | "gazetteers";
 
 function pathToView(pathname: string): AppView {
@@ -87,6 +88,12 @@ function loadStoredUser() {
   }
 }
 
+function loadAuthNotice() {
+  const notice = sessionStorage.getItem(authNoticeStorageKey) || "";
+  if (notice) sessionStorage.removeItem(authNoticeStorageKey);
+  return notice;
+}
+
 function App() {
   const [apiToken, setApiToken] = useState(() => localStorage.getItem(tokenStorageKey) || "");
   const [view, setView] = useState<AppView>(() => pathToView(window.location.pathname));
@@ -101,7 +108,7 @@ function App() {
   const [retrievalProfile, setRetrievalProfile] = useState<RetrievalProfile | null>(null);
   const [apiStatus, setApiStatus] = useState("连接中");
   const [workspaceError, setWorkspaceError] = useState("");
-  const [authNotice, setAuthNotice] = useState("");
+  const [authNotice, setAuthNotice] = useState(() => loadAuthNotice());
   const [workspacePending, setWorkspacePending] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([welcomeMessage]);
   const [input, setInput] = useState("");
@@ -211,6 +218,7 @@ function App() {
   function handleAuthenticated(tokenResponse: TokenResponse) {
     localStorage.setItem(tokenStorageKey, tokenResponse.access_token);
     localStorage.setItem(userStorageKey, JSON.stringify(tokenResponse.user));
+    sessionStorage.removeItem(authNoticeStorageKey);
     setAuthNotice("");
     setApiToken(tokenResponse.access_token);
     setCurrentUser(tokenResponse.user);
@@ -234,6 +242,7 @@ function App() {
   function expireLogin() {
     localStorage.removeItem(tokenStorageKey);
     localStorage.removeItem(userStorageKey);
+    sessionStorage.setItem(authNoticeStorageKey, "登录已过期，请重新登录。");
     setApiToken("");
     setCurrentUser(null);
     setKnowledgeBases([]);
