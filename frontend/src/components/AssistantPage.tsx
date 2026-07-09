@@ -106,11 +106,11 @@ function AssistantPage({
       <section className="assistant-shell">
         <header className="assistant-hero">
           <div>
-            <p className="home-eyebrow">Project Agent</p>
+            <p className="home-eyebrow">智能助手</p>
             <h1>县志智能助手</h1>
             <p>用对话完成县志检索、下载任务、下载进度查询和知识库创建。</p>
           </div>
-          <span className={apiStatus === "可用" ? "tone-ok" : "tone-bad"}>API {apiStatus}</span>
+          <span className={apiStatus === "可用" ? "tone-ok" : "tone-bad"}>服务{apiStatus}</span>
         </header>
 
         <div className="assistant-chat">

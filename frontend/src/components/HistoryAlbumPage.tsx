@@ -213,15 +213,15 @@ function HistoryAlbumPage({
           <p className="home-eyebrow">历史图册</p>
           <h1>一万张历史老照片</h1>
           <p>
-            图片元数据来自 AList 网盘同步索引，支持按图片名和完整路径检索。已下载图片保存在服务器
-            picture 目录，可在线预览或下载到本地。
+            汇集近现代历史影像，可按图片名、人物、地点和事件线索检索。已下载图片可快速浏览、
+            放大预览，也可以保存到自己的设备。
           </p>
         </div>
         <div className="catalog-summary" aria-label="图册统计">
           <div className="catalog-summary-row">
             <span className={apiStatus === "可用" ? "status-dot ok" : "status-dot bad"} />
             <strong>{total}</strong>
-            <small>图片索引</small>
+            <small>可检索图片</small>
           </div>
           <div className="catalog-summary-row">
             <strong>{localTotal}</strong>
@@ -237,8 +237,7 @@ function HistoryAlbumPage({
       <section className="local-picture-section" aria-label="已下载图片瀑布流">
         <div className="section-head split">
           <div>
-            <p className="home-eyebrow">本地图册</p>
-            <h2>已下载的图片</h2>
+            <h2>共享图册</h2>
           </div>
           <button
             className="home-secondary compact"
@@ -309,7 +308,7 @@ function HistoryAlbumPage({
           </>
         ) : (
           <div className="catalog-state">
-            <p>{localPending ? "正在读取本地图册..." : "picture 目录下还没有已下载图片。"}</p>
+            <p>{localPending ? "正在读取已下载图片..." : "还没有已下载图片。"}</p>
           </div>
         )}
       </section>
@@ -572,7 +571,7 @@ function downloadedTaskFromItem(item: OldPicture): AListTask | undefined {
     id: item.local_download_task_id,
     name: `downloaded file ${item.name}`,
     state: 2,
-    status: "已保存到 picture 目录",
+    status: "已下载完成",
     progress: 100,
     error: "",
   };

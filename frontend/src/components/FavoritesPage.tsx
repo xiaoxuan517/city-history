@@ -191,9 +191,9 @@ function FavoritesPage({
       <section className="catalog-hero">
         <div>
           <p className="home-eyebrow">我的收藏</p>
-          <h1>本地保存的县志与图片</h1>
+          <h1>随手收起重要的县志与图片</h1>
           <p>
-            收藏数据只保存在当前浏览器本地，不写入服务器数据库。县志收藏保留目录元数据，图片收藏保留已下载缩略图元数据。
+            把常看的县志和历史图片集中放在这里，便于再次阅读、下载、预览，或继续围绕县志创建问答知识库。
           </p>
         </div>
         <div className="catalog-summary" aria-label="收藏统计">
@@ -430,7 +430,7 @@ function downloadedTaskFromGazetteer(item: FavoriteGazetteer): AListTask | undef
     id: item.local_download_task_id,
     name: `downloaded file ${item.name}`,
     state: 2,
-    status: "已保存到 downloads 目录",
+    status: "已下载完成",
     progress: 100,
     error: "",
   };

@@ -37,7 +37,7 @@ function ChatPanel({
     <section className="chat-surface" aria-label="聊天">
       <header className="chat-header">
         <div>
-          <p className="eyebrow">RAG Chat</p>
+          <p className="eyebrow">知识库问答</p>
           <h2>县志知识库问答</h2>
         </div>
         <button className="secondary-button" onClick={onClear} disabled={pending}>

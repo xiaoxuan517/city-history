@@ -97,8 +97,8 @@ function HomePage({
           <p className="home-eyebrow">中国古籍县志数字化平台</p>
           <h1>把散落在卷册中的地方记忆，变成可浏览、可下载、可追问的知识库。</h1>
           <p className="hero-lead">
-            面向县志、府志、乡土志等地方文献，提供古籍目录展示、影像在线浏览、原文下载与 RAG
-            问答。读者可以按地域、朝代、主题查找文献，也可以针对单本县志建立知识库，追问山川、建置、人物、艺文与风俗。
+            面向县志、府志、乡土志等地方文献，提供古籍目录展示、影像在线浏览、原文下载与智能问答。
+            读者可以按地域、朝代、主题查找文献，也可以针对单本县志追问山川、建置、人物、艺文与风俗。
           </p>
           <div className="hero-actions">
             <button className="home-primary" type="button" onClick={onEnterLibrary}>
@@ -120,7 +120,7 @@ function HomePage({
           </div>
           <div className="hero-status">
             <span className={apiStatus === "可用" ? "status-dot ok" : "status-dot bad"} />
-            API {apiStatus}
+            服务{apiStatus}
           </div>
         </div>
 
@@ -165,7 +165,7 @@ function HomePage({
           </article>
           <article>
             <Sparkles size={26} />
-            <h3>单本 RAG 问答</h3>
+            <h3>单本智能问答</h3>
             <p>为每一本古籍建立独立知识库，回答时返回来源片段，降低跨书混淆和无出处解释。</p>
           </article>
         </div>
@@ -236,7 +236,7 @@ function HomePage({
       <footer className="home-footer">
         <div>
           <strong>方志云藏</strong>
-          <p>中国古籍县志展示、浏览、下载与 RAG 问答平台。</p>
+          <p>中国古籍县志展示、浏览、下载与智能问答平台。</p>
         </div>
         <p>
           首页图像来源：Wikimedia Commons《Gazetteer of Nanjing, 1624》，Public Domain Mark。

@@ -59,8 +59,8 @@ function KnowledgeBaseListPage({
           <p className="home-eyebrow">知识库列表</p>
           <h1>一本文献，一个问答知识库</h1>
           <p>
-            每个知识库对应一本文献或一个县志文件。先从县志目录下载文件，再把它加入知识库文档列表，
-            处理完成后即可围绕该书进行来源可追溯的问答。
+            每个知识库围绕一本文献展开。选择县志并加入知识库后，就可以针对书中的地理、人物、
+            建置、艺文和风俗内容进行连续追问。
           </p>
         </div>
         <div className="catalog-summary" aria-label="知识库统计">
@@ -70,7 +70,7 @@ function KnowledgeBaseListPage({
             <small>知识库</small>
           </div>
           <div className="catalog-summary-row">
-            <strong>{pending ? "..." : "RAG"}</strong>
+            <strong>{pending ? "..." : "可问答"}</strong>
             <small>状态</small>
           </div>
         </div>

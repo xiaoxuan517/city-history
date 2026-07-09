@@ -46,9 +46,9 @@ function AuthPanel({ apiStatus, notice, onAuthenticated }: AuthPanelProps) {
           <p className="eyebrow">方志云藏</p>
           <h1>古籍县志知识库</h1>
           <p>登录后为单本县志创建知识库，上传影像转写或整理文本，并基于来源片段进行问答。</p>
-          <span className={apiStatus === "可用" ? "tone-ok" : "tone-bad"}>API {apiStatus}</span>
+          <span className={apiStatus === "可用" ? "tone-ok" : "tone-bad"}>服务{apiStatus}</span>
           {apiStatus !== "可用" && (
-            <p className="auth-hint">请确认 FastAPI 已启动: uv run python -m app.main web</p>
+            <p className="auth-hint">当前服务暂不可用，请稍后再试。</p>
           )}
         </div>
 

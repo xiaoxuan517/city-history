@@ -219,8 +219,8 @@ function GazetteerPage({
           <p className="home-eyebrow">县志总目</p>
           <h1>全国地方县志古籍收藏</h1>
           <p>
-            县志文件来自后台同步索引。这里集中展示具体文件，可按文件名或完整路径检索，并下载后建立 RAG
-            知识库。
+            汇集全国地方县志古籍，可按书名、地名和完整路径检索。找到目标文献后，可以下载阅读，
+            也可以加入知识库继续追问书中内容。
           </p>
         </div>
         <div className="catalog-summary" aria-label="目录统计">
@@ -502,7 +502,7 @@ function downloadedTaskFromItem(item: GazetteerFile): AListTask | undefined {
     id: item.local_download_task_id,
     name: `downloaded file ${item.name}`,
     state: 2,
-    status: "已保存到 downloads 目录",
+    status: "已下载完成",
     progress: 100,
     error: "",
   };
