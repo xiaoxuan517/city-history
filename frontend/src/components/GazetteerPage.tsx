@@ -5,7 +5,6 @@ import {
   Download,
   Eye,
   FileText,
-  Landmark,
   RefreshCw,
   Search,
 } from "lucide-react";
@@ -18,7 +17,7 @@ import {
   listOfflineDownloadTasks,
 } from "../api";
 import type { AListTask, GazetteerFile, KnowledgeBase } from "../types";
-import UserMenu from "./UserMenu";
+import SiteNav from "./SiteNav";
 
 const gazetteerPageSize = 10;
 const hotRegions = ["江宁", "吴县","淮郡", "华阳", "长安", "金陵", "苏州府", "杭州府", "成都府", "常熟", "嘉定"];
@@ -194,27 +193,18 @@ function GazetteerPage({
 
   return (
     <main className="heritage-home gazetteer-page">
-      <nav className="site-nav" aria-label="主导航">
-        <button className="nav-brand" type="button" onClick={onHome}>
-          <Landmark size={24} />
-          <span>方志云藏</span>
-        </button>
-        <div className="nav-links">
-          <button type="button" className="active">
-            县志
-          </button>
-          <button type="button" onClick={onKnowledgeBase}>
-            知识库
-          </button>
-          <button type="button" onClick={onAssistant}>
-            智能助手
-          </button>
-          <button type="button" onClick={onHistoryAlbum}>
-            历史图册
-          </button>
-        </div>
-        <UserMenu isAuthenticated={isAuthenticated} username={username} onLogin={onLogin} onLogout={onLogout} />
-      </nav>
+      <SiteNav
+        active="gazetteers"
+        isAuthenticated={isAuthenticated}
+        username={username}
+        onHome={onHome}
+        onGazetteers={() => undefined}
+        onKnowledgeBase={onKnowledgeBase}
+        onAssistant={onAssistant}
+        onHistoryAlbum={onHistoryAlbum}
+        onLogin={onLogin}
+        onLogout={onLogout}
+      />
 
       <section className="catalog-hero">
         <div>

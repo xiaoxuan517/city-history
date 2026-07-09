@@ -5,14 +5,13 @@ import {
   Camera,
   Download,
   FileSearch,
-  Landmark,
   LibraryBig,
   MapPinned,
   Search,
   Sparkles,
 } from "lucide-react";
 
-import UserMenu from "./UserMenu";
+import SiteNav from "./SiteNav";
 
 type HomePageProps = {
   apiStatus: string;
@@ -77,27 +76,18 @@ function HomePage({
 }: HomePageProps) {
   return (
     <main className="heritage-home">
-      <nav className="site-nav" aria-label="主导航">
-        <button className="nav-brand" type="button" onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}>
-          <Landmark size={24} />
-          <span>方志云藏</span>
-        </button>
-        <div className="nav-links">
-          <button type="button" onClick={onEnterLibrary}>
-            县志
-          </button>
-          <button type="button" onClick={onEnterKnowledgeBase}>
-            知识库
-          </button>
-          <button type="button" onClick={onEnterAssistant}>
-            智能助手
-          </button>
-          <button type="button" onClick={onEnterHistoryAlbum}>
-            历史图册
-          </button>
-        </div>
-        <UserMenu isAuthenticated={isAuthenticated} username={username} onLogin={onLogin} onLogout={onLogout} />
-      </nav>
+      <SiteNav
+        active="home"
+        isAuthenticated={isAuthenticated}
+        username={username}
+        onHome={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+        onGazetteers={onEnterLibrary}
+        onKnowledgeBase={onEnterKnowledgeBase}
+        onAssistant={onEnterAssistant}
+        onHistoryAlbum={onEnterHistoryAlbum}
+        onLogin={onLogin}
+        onLogout={onLogout}
+      />
 
       <section className="home-hero">
         <div className="hero-copy">

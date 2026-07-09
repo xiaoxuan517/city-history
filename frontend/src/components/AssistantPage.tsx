@@ -1,9 +1,9 @@
 import { FormEvent, useState } from "react";
-import { Bot, BookOpen, Download, Landmark, Send } from "lucide-react";
+import { Bot, BookOpen, Download, Send } from "lucide-react";
 
 import { chatWithAssistant } from "../api";
 import type { AssistantAction } from "../types";
-import UserMenu from "./UserMenu";
+import SiteNav from "./SiteNav";
 
 type AssistantMessage = {
   id: string;
@@ -87,19 +87,18 @@ function AssistantPage({
 
   return (
     <main className="heritage-home assistant-page">
-      <nav className="site-nav" aria-label="主导航">
-        <button className="nav-brand" type="button" onClick={onHome}>
-          <Landmark size={24} />
-          <span>方志云藏</span>
-        </button>
-        <div className="nav-links">
-          <button type="button" onClick={onGazetteers}>县志</button>
-          <button type="button" onClick={onKnowledgeBase}>知识库</button>
-          <button type="button" className="active">智能助手</button>
-          <button type="button" onClick={onHistoryAlbum}>历史图册</button>
-        </div>
-        <UserMenu isAuthenticated={isAuthenticated} username={username} onLogin={onLogin} onLogout={onLogout} />
-      </nav>
+      <SiteNav
+        active="assistant"
+        isAuthenticated={isAuthenticated}
+        username={username}
+        onHome={onHome}
+        onGazetteers={onGazetteers}
+        onKnowledgeBase={onKnowledgeBase}
+        onAssistant={() => undefined}
+        onHistoryAlbum={onHistoryAlbum}
+        onLogin={onLogin}
+        onLogout={onLogout}
+      />
 
       <section className="assistant-shell">
         <header className="assistant-hero">

@@ -4,7 +4,6 @@ import {
   Download,
   Eye,
   ImageIcon,
-  Landmark,
   RefreshCw,
   Search,
   X,
@@ -20,7 +19,7 @@ import {
   listOldPictures,
 } from "../api";
 import type { AListTask, LocalOldPicture, OldPicture } from "../types";
-import UserMenu from "./UserMenu";
+import SiteNav from "./SiteNav";
 
 const picturePageSize = 12;
 const localLoadSize = 20;
@@ -188,27 +187,18 @@ function HistoryAlbumPage({
 
   return (
     <main className="heritage-home history-album-page">
-      <nav className="site-nav" aria-label="主导航">
-        <button className="nav-brand" type="button" onClick={onHome}>
-          <Landmark size={24} />
-          <span>方志云藏</span>
-        </button>
-        <div className="nav-links">
-          <button type="button" onClick={onGazetteers}>
-            县志
-          </button>
-          <button type="button" onClick={onKnowledgeBase}>
-            知识库
-          </button>
-          <button type="button" onClick={onAssistant}>
-            智能助手
-          </button>
-          <button type="button" className="active">
-            历史图册
-          </button>
-        </div>
-        <UserMenu isAuthenticated={isAuthenticated} username={username} onLogin={onLogin} onLogout={onLogout} />
-      </nav>
+      <SiteNav
+        active="historyAlbum"
+        isAuthenticated={isAuthenticated}
+        username={username}
+        onHome={onHome}
+        onGazetteers={onGazetteers}
+        onKnowledgeBase={onKnowledgeBase}
+        onAssistant={onAssistant}
+        onHistoryAlbum={() => undefined}
+        onLogin={onLogin}
+        onLogout={onLogout}
+      />
 
       <section className="catalog-hero">
         <div>

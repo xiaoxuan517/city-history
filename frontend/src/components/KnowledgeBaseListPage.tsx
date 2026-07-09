@@ -1,7 +1,7 @@
-import { Bot, BookOpen, Landmark, LibraryBig, Plus, Search, Trash2 } from "lucide-react";
+import { Bot, BookOpen, LibraryBig, Plus, Search, Trash2 } from "lucide-react";
 
 import type { KnowledgeBase } from "../types";
-import UserMenu from "./UserMenu";
+import SiteNav from "./SiteNav";
 
 type KnowledgeBaseListPageProps = {
   apiStatus: string;
@@ -38,27 +38,18 @@ function KnowledgeBaseListPage({
 }: KnowledgeBaseListPageProps) {
   return (
     <main className="heritage-home kb-list-page">
-      <nav className="site-nav" aria-label="主导航">
-        <button className="nav-brand" type="button" onClick={onHome}>
-          <Landmark size={24} />
-          <span>方志云藏</span>
-        </button>
-        <div className="nav-links">
-          <button type="button" onClick={onLibrary}>
-            县志
-          </button>
-          <button type="button" className="active">
-            知识库
-          </button>
-          <button type="button" onClick={onAssistant}>
-            智能助手
-          </button>
-          <button type="button" onClick={onHistoryAlbum}>
-            历史图册
-          </button>
-        </div>
-        <UserMenu isAuthenticated={isAuthenticated} username={username} onLogin={onLogin} onLogout={onLogout} />
-      </nav>
+      <SiteNav
+        active="knowledgeBase"
+        isAuthenticated={isAuthenticated}
+        username={username}
+        onHome={onHome}
+        onGazetteers={onLibrary}
+        onKnowledgeBase={() => undefined}
+        onAssistant={onAssistant}
+        onHistoryAlbum={onHistoryAlbum}
+        onLogin={onLogin}
+        onLogout={onLogout}
+      />
 
       <section className="catalog-hero">
         <div>

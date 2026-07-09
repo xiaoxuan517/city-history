@@ -1,5 +1,4 @@
 import { FormEvent, useEffect, useRef, useState } from "react";
-import { Landmark } from "lucide-react";
 
 import {
   cancelChatRun,
@@ -34,7 +33,7 @@ import HomePage from "./components/HomePage";
 import KbManager from "./components/KbManager";
 import KnowledgeBaseListPage from "./components/KnowledgeBaseListPage";
 import Sidebar from "./components/Sidebar";
-import UserMenu from "./components/UserMenu";
+import SiteNav from "./components/SiteNav";
 import type {
   ChatMessage,
   ChatSession,
@@ -837,32 +836,18 @@ function App() {
 
   return (
     <main className="heritage-home workspace-page">
-      <nav className="site-nav" aria-label="主导航">
-        <button className="nav-brand" type="button" onClick={() => navigateTo("home")}>
-          <Landmark size={24} />
-          <span>方志云藏</span>
-        </button>
-        <div className="nav-links">
-          <button type="button" onClick={() => navigateTo("gazetteers")}>
-            县志
-          </button>
-          <button type="button" className="active" onClick={() => navigateTo("kbList")}>
-            知识库
-          </button>
-          <button type="button" onClick={() => navigateTo("assistant")}>
-            智能助手
-          </button>
-          <button type="button" onClick={() => navigateTo("historyAlbum")}>
-            历史图册
-          </button>
-        </div>
-        <UserMenu
-          isAuthenticated={Boolean(apiToken && currentUser)}
-          username={currentUser?.username}
-          onLogin={() => navigateTo("auth")}
-          onLogout={logout}
-        />
-      </nav>
+      <SiteNav
+        active="knowledgeBase"
+        isAuthenticated={Boolean(apiToken && currentUser)}
+        username={currentUser?.username}
+        onHome={() => navigateTo("home")}
+        onGazetteers={() => navigateTo("gazetteers")}
+        onKnowledgeBase={() => navigateTo("kbList")}
+        onAssistant={() => navigateTo("assistant")}
+        onHistoryAlbum={() => navigateTo("historyAlbum")}
+        onLogin={() => navigateTo("auth")}
+        onLogout={logout}
+      />
 
       <section className="app-shell">
         <Sidebar
