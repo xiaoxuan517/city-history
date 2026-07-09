@@ -29,6 +29,7 @@ import AuthPanel from "./components/AuthPanel";
 import ChatPanel from "./components/ChatPanel";
 import DocumentPanel from "./components/DocumentPanel";
 import GazetteerPage from "./components/GazetteerPage";
+import HistoryAlbumPage from "./components/HistoryAlbumPage";
 import HomePage from "./components/HomePage";
 import KbManager from "./components/KbManager";
 import KnowledgeBaseListPage from "./components/KnowledgeBaseListPage";
@@ -58,11 +59,12 @@ const welcomeMessage: ChatMessage = {
 const tokenStorageKey = "rag_access_token";
 const userStorageKey = "rag_current_user";
 const authNoticeStorageKey = "rag_auth_notice";
-type AppView = "home" | "auth" | "kbList" | "workspace" | "gazetteers" | "assistant";
+type AppView = "home" | "auth" | "kbList" | "workspace" | "gazetteers" | "assistant" | "historyAlbum";
 
 function pathToView(pathname: string): AppView {
   if (pathname.startsWith("/login")) return "auth";
   if (pathname.startsWith("/assistant")) return "assistant";
+  if (pathname.startsWith("/history-album")) return "historyAlbum";
   if (/^\/workspace\/\d+/.test(pathname)) return "workspace";
   if (pathname.startsWith("/workspace")) return "kbList";
   if (pathname.startsWith("/gazetteers")) return "gazetteers";
@@ -274,7 +276,9 @@ function App() {
             ? "/gazetteers"
             : nextView === "assistant"
               ? "/assistant"
-            : "/";
+              : nextView === "historyAlbum"
+                ? "/history-album"
+                : "/";
     if (window.location.pathname !== nextPath) {
       window.history.pushState(null, "", nextPath);
     }
@@ -747,6 +751,7 @@ function App() {
         onEnterLibrary={() => navigateTo("gazetteers")}
         onEnterKnowledgeBase={() => navigateTo("kbList")}
         onEnterAssistant={() => navigateTo("assistant")}
+        onEnterHistoryAlbum={() => navigateTo("historyAlbum")}
         onLogin={() => navigateTo("auth")}
         onLogout={logout}
       />
@@ -761,11 +766,28 @@ function App() {
         username={currentUser?.username}
         onHome={() => navigateTo("home")}
         onAssistant={() => navigateTo("assistant")}
+        onHistoryAlbum={() => navigateTo("historyAlbum")}
         onCreateKnowledgeBaseFromDownload={createKbFromDownload}
         onKnowledgeBase={() => navigateTo("kbList")}
         onLogin={() => navigateTo("auth")}
         onLogout={logout}
         onOpenKnowledgeBase={openKnowledgeBase}
+      />
+    );
+  }
+
+  if (view === "historyAlbum") {
+    return (
+      <HistoryAlbumPage
+        apiStatus={apiStatus}
+        isAuthenticated={Boolean(apiToken && currentUser)}
+        username={currentUser?.username}
+        onHome={() => navigateTo("home")}
+        onGazetteers={() => navigateTo("gazetteers")}
+        onKnowledgeBase={() => navigateTo("kbList")}
+        onAssistant={() => navigateTo("assistant")}
+        onLogin={() => navigateTo("auth")}
+        onLogout={logout}
       />
     );
   }
@@ -780,6 +802,7 @@ function App() {
         onHome={() => navigateTo("home")}
         onGazetteers={() => navigateTo("gazetteers")}
         onKnowledgeBase={() => navigateTo("kbList")}
+        onHistoryAlbum={() => navigateTo("historyAlbum")}
         onLogin={() => navigateTo("auth")}
         onLogout={logout}
         onOpenKnowledgeBase={openKnowledgeBase}
@@ -801,6 +824,7 @@ function App() {
         pending={workspacePending}
         onCreateFromGazetteer={() => navigateTo("gazetteers")}
         onAssistant={() => navigateTo("assistant")}
+        onHistoryAlbum={() => navigateTo("historyAlbum")}
         onHome={() => navigateTo("home")}
         onLibrary={() => navigateTo("gazetteers")}
         onLogin={() => navigateTo("auth")}
@@ -827,6 +851,9 @@ function App() {
           </button>
           <button type="button" onClick={() => navigateTo("assistant")}>
             智能助手
+          </button>
+          <button type="button" onClick={() => navigateTo("historyAlbum")}>
+            历史图册
           </button>
         </div>
         <UserMenu

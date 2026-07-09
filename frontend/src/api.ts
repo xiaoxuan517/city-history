@@ -6,10 +6,12 @@ import type {
   AListOfflineDownloadResponse,
   AListTaskListResponse,
   GazetteerFileListResponse,
+  LocalOldPictureListResponse,
   ChatRun,
   ChatRunEvent,
   ChatSession,
   KnowledgeDocument,
+  OldPictureListResponse,
   PublicConfig,
   RetrievalPreviewResponse,
   RetrievalProfile,
@@ -21,6 +23,7 @@ import type {
 
 const apiBaseUrl = (import.meta.env.VITE_API_BASE_URL || "").replace(/\/$/, "");
 const gazetteerFileRequests = new Map<string, Promise<GazetteerFileListResponse>>();
+const oldPictureRequests = new Map<string, Promise<OldPictureListResponse>>();
 const authNoticeStorageKey = "rag_auth_notice";
 const tokenStorageKey = "rag_access_token";
 const userStorageKey = "rag_current_user";
@@ -278,6 +281,41 @@ export async function listGazetteerFiles(payload: {
     });
   gazetteerFileRequests.set(requestKey, nextRequest);
   return nextRequest;
+}
+
+export async function listOldPictures(payload: {
+  q?: string;
+  page?: number;
+  per_page?: number;
+} = {}): Promise<OldPictureListResponse> {
+  const params = new URLSearchParams({
+    q: payload.q ?? "",
+    page: String(payload.page ?? 1),
+    per_page: String(payload.per_page ?? 12),
+  });
+  const requestKey = params.toString();
+  const pendingRequest = oldPictureRequests.get(requestKey);
+  if (pendingRequest) return pendingRequest;
+
+  const nextRequest = request(`/api/v1/old-pictures?${requestKey}`)
+    .then((response) => response.json())
+    .finally(() => {
+      oldPictureRequests.delete(requestKey);
+    });
+  oldPictureRequests.set(requestKey, nextRequest);
+  return nextRequest;
+}
+
+export async function listLocalOldPictures(payload: {
+  offset?: number;
+  limit?: number;
+} = {}): Promise<LocalOldPictureListResponse> {
+  const params = new URLSearchParams({
+    offset: String(payload.offset ?? 0),
+    limit: String(payload.limit ?? 20),
+  });
+  const response = await request(`/api/v1/old-pictures/local?${params.toString()}`);
+  return response.json();
 }
 
 export async function addOfflineDownload(payload: {

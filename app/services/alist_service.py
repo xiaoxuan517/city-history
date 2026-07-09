@@ -40,6 +40,7 @@ _LOCAL_DOWNLOAD_FILES: dict[str, Path] = {}
 _LOCAL_DOWNLOAD_LOCK = Lock()
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
 DOWNLOAD_DIR = PROJECT_ROOT / "downloads"
+PICTURE_DIR = PROJECT_ROOT / "picture"
 
 
 class AListService:
@@ -189,11 +190,12 @@ class AListService:
         source_path = payload.source_path or self._join_path(payload.list_path or "", payload.name or "")
         download_url = self._build_cached_file_download_url(payload)
         filename = self._download_filename(payload, source_path, download_url)
-        DOWNLOAD_DIR.mkdir(parents=True, exist_ok=True)
-        existing_task = self.get_existing_local_download_task(filename)
+        download_dir = self._local_download_dir(payload.path)
+        download_dir.mkdir(parents=True, exist_ok=True)
+        existing_task = self.get_existing_local_download_task(filename, download_dir=download_dir)
         if existing_task is not None:
             return AListOfflineDownloadResponse(code=200, message="success", data={"tasks": [existing_task]})
-        target_path = self._unique_download_path(DOWNLOAD_DIR / filename)
+        target_path = self._unique_download_path(download_dir / filename)
 
         task_id = f"local-{uuid4().hex}"
         task = AListTask(
@@ -254,20 +256,20 @@ class AListService:
         if task.progress < 100 and task.state != 2:
             raise ApiError(status_code=409, code="download_not_ready", message="Download task is not complete")
 
-        resolved_dir = DOWNLOAD_DIR.resolve()
+        allowed_dirs = [DOWNLOAD_DIR.resolve(), PICTURE_DIR.resolve()]
         resolved_path = file_path.resolve()
-        if not resolved_path.is_relative_to(resolved_dir) or not resolved_path.is_file():
+        if not any(resolved_path.is_relative_to(directory) for directory in allowed_dirs) or not resolved_path.is_file():
             raise ApiError(status_code=404, code="download_file_not_found", message="Downloaded file was not found")
         return resolved_path
 
-    def get_existing_local_download_task(self, filename: str) -> AListTask | None:
-        file_path = DOWNLOAD_DIR / self._sanitize_filename(filename)
+    def get_existing_local_download_task(self, filename: str, *, download_dir: Path = DOWNLOAD_DIR) -> AListTask | None:
+        file_path = download_dir / self._sanitize_filename(filename)
         if not file_path.is_file():
             return None
-        task_id = self._local_file_task_id(file_path.name)
+        task_id = self._local_file_task_id(file_path.name, download_dir=download_dir)
         task = AListTask(
             id=task_id,
-            name=f"downloaded file {file_path.name} in ({DOWNLOAD_DIR})",
+            name=f"downloaded file {file_path.name} in ({download_dir})",
             state=2,
             status=f"saved to {file_path}",
             progress=100,
@@ -338,8 +340,12 @@ class AListService:
         return path.with_name(f"{stem}-{uuid4().hex}{suffix}")
 
     @staticmethod
-    def _local_file_task_id(filename: str) -> str:
-        return f"local-file-{uuid5(NAMESPACE_URL, filename).hex}"
+    def _local_file_task_id(filename: str, *, download_dir: Path = DOWNLOAD_DIR) -> str:
+        return f"local-file-{uuid5(NAMESPACE_URL, f'{download_dir.name}/{filename}').hex}"
+
+    @staticmethod
+    def _local_download_dir(path: str) -> Path:
+        return PICTURE_DIR if path.strip("/").split("/")[-1] == "picture" else DOWNLOAD_DIR
 
     def _post_file_list(self, client: httpx.Client, payload: AListFileListRequest) -> httpx.Response:
         response = self._post_with_auth(
@@ -555,6 +561,8 @@ class AListService:
 
     @staticmethod
     def _full_file_path(list_path: str, item: AListFileItem) -> str:
+        if item.virtual_path and item.virtual_path.endswith(f"/{item.name}"):
+            return item.virtual_path
         if item.path and item.path.endswith(f"/{item.name}"):
             return item.path
         return AListService._join_path(item.path or list_path, item.name)

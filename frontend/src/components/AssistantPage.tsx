@@ -21,6 +21,7 @@ type AssistantPageProps = {
   onHome: () => void;
   onGazetteers: () => void;
   onKnowledgeBase: () => void;
+  onHistoryAlbum: () => void;
   onLogin: () => void;
   onLogout: () => void;
   onOpenKnowledgeBase: (kbId: number) => void;
@@ -34,6 +35,7 @@ function AssistantPage({
   onHome,
   onGazetteers,
   onKnowledgeBase,
+  onHistoryAlbum,
   onLogin,
   onLogout,
   onOpenKnowledgeBase,
@@ -94,6 +96,7 @@ function AssistantPage({
           <button type="button" onClick={onGazetteers}>县志</button>
           <button type="button" onClick={onKnowledgeBase}>知识库</button>
           <button type="button" className="active">智能助手</button>
+          <button type="button" onClick={onHistoryAlbum}>历史图册</button>
         </div>
         <UserMenu isAuthenticated={isAuthenticated} username={username} onLogin={onLogin} onLogout={onLogout} />
       </nav>

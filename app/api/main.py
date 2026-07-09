@@ -18,11 +18,13 @@ from app.api.v1.chat import router as chat_router
 from app.api.v1.documents import router as document_router
 from app.api.v1.gazetteer_files import router as gazetteer_file_router
 from app.api.v1.knowledge_bases import router as knowledge_base_router
+from app.api.v1.old_pictures import router as old_picture_router
 from app.api.v1.prompts import router as prompt_router
 from app.api.v1.system import router as system_router
 from app.config.settings import settings
 from app.config.logging_setup import setup_logging
 from app.services.gazetteer_file_scheduler import run_gazetteer_file_sync_loop
+from app.services.old_picture_scheduler import run_old_picture_sync_loop
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
 FRONTEND_DIST_DIR = PROJECT_ROOT / "frontend" / "dist"
@@ -31,16 +33,17 @@ FRONTEND_DIST_DIR = PROJECT_ROOT / "frontend" / "dist"
 @asynccontextmanager
 async def lifespan(_: FastAPI):
     setup_logging()
-    sync_task = (
-        asyncio.create_task(run_gazetteer_file_sync_loop())
-        if settings.gazetteer_file_sync_enabled
-        else None
-    )
+    sync_tasks = []
+    if settings.gazetteer_file_sync_enabled:
+        sync_tasks.append(asyncio.create_task(run_gazetteer_file_sync_loop()))
+    if settings.old_picture_sync_enabled:
+        sync_tasks.append(asyncio.create_task(run_old_picture_sync_loop()))
     try:
         yield
     finally:
-        if sync_task is not None:
+        for sync_task in sync_tasks:
             sync_task.cancel()
+        for sync_task in sync_tasks:
             try:
                 await sync_task
             except asyncio.CancelledError:
@@ -63,6 +66,7 @@ app.include_router(alist_router, dependencies=[Depends(enforce_rate_limit)])
 app.include_router(gazetteer_file_router, dependencies=[Depends(enforce_rate_limit)])
 app.include_router(auth_router, dependencies=[Depends(enforce_rate_limit)])
 app.include_router(knowledge_base_router, dependencies=[Depends(enforce_rate_limit)])
+app.include_router(old_picture_router, dependencies=[Depends(enforce_rate_limit)])
 app.include_router(document_router, dependencies=[Depends(enforce_rate_limit)])
 app.include_router(chat_router, dependencies=[Depends(enforce_rate_limit)])
 app.include_router(prompt_router, dependencies=[Depends(enforce_rate_limit)])
@@ -96,6 +100,11 @@ def gazetteers_index() -> FileResponse:
 
 @app.get("/assistant", include_in_schema=False)
 def assistant_index() -> FileResponse:
+    return FileResponse(FRONTEND_DIST_DIR / "index.html")
+
+
+@app.get("/history-album", include_in_schema=False)
+def history_album_index() -> FileResponse:
     return FileResponse(FRONTEND_DIST_DIR / "index.html")
 
 

@@ -27,6 +27,7 @@ class AListLabel(BaseModel):
 class AListFileItem(BaseModel):
     id: str
     path: str
+    virtual_path: str | None = None
     name: str
     size: int
     is_dir: bool
@@ -36,7 +37,7 @@ class AListFileItem(BaseModel):
     thumb: str
     type: int
     hashinfo: str
-    hash_info: AListHashInfo
+    hash_info: AListHashInfo | None = None
     label_list: list[AListLabel] | None = None
 
 

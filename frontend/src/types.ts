@@ -185,7 +185,8 @@ export type AListFileItem = {
   hashinfo: string;
   hash_info: {
     md5?: string | null;
-  };
+  } | null;
+  virtual_path?: string | null;
   label_list:
     | {
         id: number;
@@ -228,6 +229,41 @@ export type GazetteerFileListResponse = {
   total: number;
   page: number;
   per_page: number;
+};
+
+export type OldPicture = {
+  id: number;
+  name: string;
+  full_path: string;
+  source_path: string;
+  is_downloaded: boolean;
+  local_download_task_id: string | null;
+  size: number;
+  modified: string;
+  synced_at: string;
+  created_at: string;
+  updated_at: string;
+};
+
+export type OldPictureListResponse = {
+  items: OldPicture[];
+  total: number;
+  page: number;
+  per_page: number;
+};
+
+export type LocalOldPicture = {
+  name: string;
+  size: number;
+  modified: string;
+  local_download_task_id: string;
+};
+
+export type LocalOldPictureListResponse = {
+  items: LocalOldPicture[];
+  total: number;
+  offset: number;
+  limit: number;
 };
 
 export type AListTask = {

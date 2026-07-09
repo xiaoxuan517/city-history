@@ -109,6 +109,9 @@ class Settings:
     gazetteer_file_sync_enabled: bool
     gazetteer_file_sync_interval_seconds: int
     gazetteer_file_root_path: str
+    old_picture_sync_enabled: bool
+    old_picture_sync_interval_seconds: int
+    old_picture_root_path: str
 
     def __post_init__(self) -> None:
         if self.retrieval_search_type not in _SUPPORTED_RETRIEVAL_SEARCH_TYPES:
@@ -203,6 +206,12 @@ class Settings:
         if not self.gazetteer_file_root_path.strip():
             raise ValueError("GAZETTEER_FILE_ROOT_PATH must not be empty")
 
+        if self.old_picture_sync_interval_seconds <= 0:
+            raise ValueError("OLD_PICTURE_SYNC_INTERVAL_SECONDS must be > 0")
+
+        if not self.old_picture_root_path.strip():
+            raise ValueError("OLD_PICTURE_ROOT_PATH must not be empty")
+
     @classmethod
     def load(cls) -> "Settings":
         return cls(
@@ -258,6 +267,9 @@ class Settings:
             gazetteer_file_root_path=(
                 os.getenv("GAZETTEER_FILE_ROOT_PATH") or "/百度网盘/全国地方县志古籍收藏"
             ).strip(),
+            old_picture_sync_enabled=_get_bool_env("OLD_PICTURE_SYNC_ENABLED", True),
+            old_picture_sync_interval_seconds=_get_int_env("OLD_PICTURE_SYNC_INTERVAL_SECONDS", 6 * 60 * 60),
+            old_picture_root_path=(os.getenv("OLD_PICTURE_ROOT_PATH") or "/夸克/一万张历史老照片").strip(),
         )
 
 

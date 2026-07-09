@@ -2,6 +2,7 @@ import {
   Archive,
   BookOpen,
   Bot,
+  Camera,
   Download,
   FileSearch,
   Landmark,
@@ -20,6 +21,7 @@ type HomePageProps = {
   onEnterLibrary: () => void;
   onEnterKnowledgeBase: () => void;
   onEnterAssistant: () => void;
+  onEnterHistoryAlbum: () => void;
   onLogin: () => void;
   onLogout: () => void;
 };
@@ -69,6 +71,7 @@ function HomePage({
   onEnterLibrary,
   onEnterKnowledgeBase,
   onEnterAssistant,
+  onEnterHistoryAlbum,
   onLogin,
   onLogout,
 }: HomePageProps) {
@@ -88,6 +91,9 @@ function HomePage({
           </button>
           <button type="button" onClick={onEnterAssistant}>
             智能助手
+          </button>
+          <button type="button" onClick={onEnterHistoryAlbum}>
+            历史图册
           </button>
         </div>
         <UserMenu isAuthenticated={isAuthenticated} username={username} onLogin={onLogin} onLogout={onLogout} />
@@ -113,6 +119,10 @@ function HomePage({
             <button className="home-secondary" type="button" onClick={onEnterAssistant}>
               <Sparkles size={18} />
               智能检索下载
+            </button>
+            <button className="home-secondary" type="button" onClick={onEnterHistoryAlbum}>
+              <Camera size={18} />
+              浏览历史图册
             </button>
           </div>
           <div className="hero-status">

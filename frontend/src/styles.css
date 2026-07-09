@@ -927,6 +927,105 @@ body {
   color: #7b8a83;
 }
 
+.history-album-page {
+  padding-bottom: 72px;
+}
+
+.local-picture-section,
+.picture-result-list {
+  width: min(1180px, calc(100% - 36px));
+  margin: 0 auto;
+}
+
+.local-picture-section {
+  display: grid;
+  gap: 18px;
+  margin-bottom: 24px;
+  padding: 20px;
+  border: 1px solid rgba(91, 62, 33, 0.14);
+  border-radius: 8px;
+  background:
+    linear-gradient(135deg, rgba(255, 250, 240, 0.82), rgba(255, 255, 255, 0.48)),
+    repeating-linear-gradient(90deg, rgba(29, 59, 47, 0.045) 0 1px, transparent 1px 18px);
+}
+
+.local-picture-section .section-head {
+  width: 100%;
+  padding: 0;
+}
+
+.local-picture-section h2 {
+  margin: 0;
+  color: #17251f;
+  font-size: clamp(24px, 3vw, 34px);
+}
+
+.picture-masonry {
+  column-count: 4;
+  column-gap: 14px;
+}
+
+.picture-tile {
+  display: inline-block;
+  width: 100%;
+  break-inside: avoid;
+  margin: 0 0 14px;
+  overflow: hidden;
+  border: 1px solid rgba(29, 59, 47, 0.12);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.7);
+  box-shadow: 0 18px 42px rgba(50, 38, 24, 0.08);
+}
+
+.picture-tile button {
+  display: block;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: #efe6d6;
+}
+
+.picture-tile img {
+  display: block;
+  width: 100%;
+  min-height: 160px;
+  object-fit: cover;
+}
+
+.picture-tile div {
+  display: grid;
+  gap: 5px;
+  padding: 10px 12px 12px;
+}
+
+.picture-tile strong {
+  color: #17251f;
+  font-size: 13px;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+.picture-tile span {
+  color: #7b8a83;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.load-more-pictures {
+  justify-self: center;
+}
+
+.picture-result-list {
+  display: grid;
+  gap: 12px;
+  margin-top: 18px;
+}
+
+.picture-result-card .gazetteer-icon {
+  background: rgba(29, 59, 47, 0.1);
+  color: #1d3b2f;
+}
+
 button,
 input,
 select,
@@ -2132,6 +2231,10 @@ textarea:disabled {
     grid-template-columns: repeat(2, 1fr);
   }
 
+  .picture-masonry {
+    column-count: 2;
+  }
+
   .catalog-summary,
   .catalog-toolbar,
   .gazetteer-card {
@@ -2204,6 +2307,10 @@ textarea:disabled {
   .catalog-toolbar,
   .gazetteer-card {
     grid-template-columns: 1fr;
+  }
+
+  .picture-masonry {
+    column-count: 1;
   }
 
   .stat-band div,

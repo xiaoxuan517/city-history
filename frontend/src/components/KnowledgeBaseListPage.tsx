@@ -11,6 +11,7 @@ type KnowledgeBaseListPageProps = {
   pending: boolean;
   onCreateFromGazetteer: () => void;
   onAssistant: () => void;
+  onHistoryAlbum: () => void;
   onHome: () => void;
   onLibrary: () => void;
   onLogin: () => void;
@@ -27,6 +28,7 @@ function KnowledgeBaseListPage({
   pending,
   onCreateFromGazetteer,
   onAssistant,
+  onHistoryAlbum,
   onHome,
   onLibrary,
   onLogin,
@@ -50,6 +52,9 @@ function KnowledgeBaseListPage({
           </button>
           <button type="button" onClick={onAssistant}>
             智能助手
+          </button>
+          <button type="button" onClick={onHistoryAlbum}>
+            历史图册
           </button>
         </div>
         <UserMenu isAuthenticated={isAuthenticated} username={username} onLogin={onLogin} onLogout={onLogout} />
