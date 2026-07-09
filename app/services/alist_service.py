@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 from pathlib import Path
 from threading import Lock
 from threading import Thread
@@ -13,6 +14,7 @@ from urllib.parse import unquote
 from urllib.parse import urlparse
 
 import httpx
+from PIL import Image, ImageOps
 
 from app.api.errors import ApiError
 from app.config.settings import settings
@@ -38,9 +40,13 @@ _FILE_CACHE_LOCK = Lock()
 _LOCAL_DOWNLOAD_TASKS: dict[str, AListTask] = {}
 _LOCAL_DOWNLOAD_FILES: dict[str, Path] = {}
 _LOCAL_DOWNLOAD_LOCK = Lock()
+logger = logging.getLogger(__name__)
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
 DOWNLOAD_DIR = PROJECT_ROOT / "downloads"
 PICTURE_DIR = PROJECT_ROOT / "picture"
+PREVIEW_DIR = PROJECT_ROOT / "preview"
+_PREVIEW_MAX_SIZE = (480, 480)
+_PREVIEW_QUALITY = 68
 
 
 class AListService:
@@ -239,6 +245,8 @@ class AListService:
                                     status=f"{downloaded}/{total} bytes",
                                 )
             self._update_local_task(task_id, state=2, status=f"saved to {target_path}", progress=100)
+            if target_path.resolve().is_relative_to(PICTURE_DIR.resolve()):
+                ensure_picture_preview(target_path)
         except Exception as exc:
             if target_path.exists():
                 target_path.unlink(missing_ok=True)
@@ -615,3 +623,33 @@ class AListService:
 
 def get_alist_service() -> AListService:
     return AListService()
+
+
+def picture_preview_path_for(file_path: Path) -> Path:
+    return PREVIEW_DIR / f"{file_path.stem}.webp"
+
+
+def ensure_picture_preview(file_path: Path) -> Path | None:
+    if not file_path.is_file():
+        return None
+
+    PREVIEW_DIR.mkdir(parents=True, exist_ok=True)
+    preview_path = picture_preview_path_for(file_path)
+    if preview_path.is_file() and preview_path.stat().st_mtime >= file_path.stat().st_mtime:
+        return preview_path
+
+    try:
+        with Image.open(file_path) as image:
+            image = ImageOps.exif_transpose(image)
+            if image.mode not in {"RGB", "RGBA"}:
+                image = image.convert("RGB")
+            if image.mode == "RGBA":
+                background = Image.new("RGB", image.size, (255, 250, 240))
+                background.paste(image, mask=image.getchannel("A"))
+                image = background
+            image.thumbnail(_PREVIEW_MAX_SIZE, Image.Resampling.LANCZOS)
+            image.save(preview_path, "WEBP", quality=_PREVIEW_QUALITY, method=4)
+        return preview_path
+    except Exception:
+        logger.exception("生成历史图片预览图失败。file=%s preview=%s", file_path, preview_path)
+        return None

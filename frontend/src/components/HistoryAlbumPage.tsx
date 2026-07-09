@@ -14,6 +14,7 @@ import {
   addOfflineDownload,
   getLocalDownloadFileUrl,
   getLocalDownloadPreviewUrl,
+  getOldPicturePreviewUrl,
   listLocalOldPictures,
   listOfflineDownloadTasks,
   listOldPictures,
@@ -262,7 +263,12 @@ function HistoryAlbumPage({
                     type="button"
                     onClick={() => setPreviewPicture(picture)}
                   >
-                    <img src={getLocalDownloadPreviewUrl(picture.local_download_task_id)} alt={picture.name} />
+                    <img
+                      src={getOldPicturePreviewUrl(picture.preview_name)}
+                      alt={picture.name}
+                      loading="lazy"
+                      decoding="async"
+                    />
                   </button>
                   <div className="picture-tile-body">
                     <strong>{picture.name}</strong>

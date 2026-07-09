@@ -56,6 +56,10 @@ export function getLocalDownloadPreviewUrl(taskId: string) {
   return apiUrl(`/api/fs/offline_download/tasks/${encodeURIComponent(taskId)}/preview`);
 }
 
+export function getOldPicturePreviewUrl(filename: string) {
+  return apiUrl(`/api/v1/old-pictures/local-preview/${encodeURIComponent(filename)}`);
+}
+
 async function request(path: string, options: RequestInit = {}, token?: string) {
   const response = await fetch(apiUrl(path), {
     ...options,

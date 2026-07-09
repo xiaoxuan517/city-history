@@ -34,6 +34,7 @@ downloads/*
 !downloads/.gitkeep
 logs/
 picture/
+preview/
 
 # OS files
 .DS_Store

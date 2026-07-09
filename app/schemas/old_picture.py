@@ -30,6 +30,7 @@ class OldPictureListResponse(BaseModel):
 
 class LocalOldPictureRead(BaseModel):
     name: str
+    preview_name: str
     size: int
     modified: datetime
     local_download_task_id: str

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
 from time import monotonic, perf_counter
@@ -11,11 +12,17 @@ from sqlalchemy.orm import Session
 from app.config.settings import settings
 from app.db.models.old_picture import OldPicture
 from app.schemas.alist import AListFileItem, AListFileListRequest
-from app.services.alist_service import AListService, PICTURE_DIR
+from app.services.alist_service import AListService, PICTURE_DIR, ensure_picture_preview
 
 logger = logging.getLogger(__name__)
 
 IMAGE_SUFFIXES = {".jpg", ".jpeg", ".png", ".webp", ".gif", ".bmp"}
+
+
+@dataclass(frozen=True)
+class LocalOldPictureFile:
+    original_path: Path
+    preview_path: Path
 
 
 class OldPictureService:
@@ -56,7 +63,7 @@ class OldPictureService:
         )
         return rows, total
 
-    def list_local_pictures(self, *, offset: int = 0, limit: int = 20) -> tuple[list[Path], int]:
+    def list_local_pictures(self, *, offset: int = 0, limit: int = 20) -> tuple[list[LocalOldPictureFile], int]:
         PICTURE_DIR.mkdir(parents=True, exist_ok=True)
         files = [
             path
@@ -65,7 +72,13 @@ class OldPictureService:
         ]
         files.sort(key=lambda path: path.stat().st_mtime, reverse=True)
         start = max(offset, 0)
-        return files[start : start + max(1, min(limit, 50))], len(files)
+        page_files = files[start : start + max(1, min(limit, 50))]
+        local_pictures: list[LocalOldPictureFile] = []
+        for file_path in page_files:
+            preview_path = ensure_picture_preview(file_path)
+            if preview_path is not None:
+                local_pictures.append(LocalOldPictureFile(original_path=file_path, preview_path=preview_path))
+        return local_pictures, len(files)
 
     def sync_from_alist(
         self,

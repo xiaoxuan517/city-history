@@ -254,6 +254,7 @@ export type OldPictureListResponse = {
 
 export type LocalOldPicture = {
   name: string;
+  preview_name: string;
   size: number;
   modified: string;
   local_download_task_id: string;
