@@ -977,7 +977,7 @@ body {
   box-shadow: 0 18px 42px rgba(50, 38, 24, 0.08);
 }
 
-.picture-tile button {
+.picture-preview-button {
   display: block;
   width: 100%;
   padding: 0;
@@ -992,9 +992,9 @@ body {
   object-fit: cover;
 }
 
-.picture-tile div {
+.picture-tile-body {
   display: grid;
-  gap: 5px;
+  gap: 8px;
   padding: 10px 12px 12px;
 }
 
@@ -1009,6 +1009,79 @@ body {
   color: #7b8a83;
   font-size: 12px;
   font-weight: 800;
+}
+
+.picture-download-button {
+  width: 100%;
+}
+
+.picture-preview-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+}
+
+.picture-preview-backdrop {
+  position: absolute;
+  inset: 0;
+  border: 0;
+  background: rgba(23, 37, 31, 0.72);
+  backdrop-filter: blur(10px);
+}
+
+.picture-preview-dialog {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  width: min(1100px, 100%);
+  max-height: min(88vh, 900px);
+  overflow: hidden;
+  border: 1px solid rgba(255, 250, 240, 0.24);
+  border-radius: 8px;
+  background: #111b17;
+  box-shadow: 0 28px 80px rgba(0, 0, 0, 0.34);
+}
+
+.picture-preview-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  min-width: 0;
+  padding: 12px 14px;
+  border-bottom: 1px solid rgba(255, 250, 240, 0.16);
+  background: rgba(17, 27, 23, 0.92);
+}
+
+.picture-preview-header strong {
+  min-width: 0;
+  color: #fffaf0;
+  font-size: 14px;
+  overflow-wrap: anywhere;
+}
+
+.picture-preview-header > div {
+  display: flex;
+  flex-shrink: 0;
+  gap: 8px;
+  align-items: center;
+}
+
+.picture-preview-dialog img {
+  display: block;
+  width: 100%;
+  max-height: calc(88vh - 62px);
+  object-fit: contain;
+  background: #0f1714;
+}
+
+.icon-button.light {
+  background: rgba(255, 250, 240, 0.12);
+  color: #fffaf0;
 }
 
 .load-more-pictures {

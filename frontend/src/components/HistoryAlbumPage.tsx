@@ -7,6 +7,7 @@ import {
   Landmark,
   RefreshCw,
   Search,
+  X,
 } from "lucide-react";
 
 import {
@@ -59,6 +60,7 @@ function HistoryAlbumPage({
   const [error, setError] = useState("");
   const [downloadTasks, setDownloadTasks] = useState<Record<string, AListTask>>({});
   const [downloadErrors, setDownloadErrors] = useState<Record<string, string>>({});
+  const [previewPicture, setPreviewPicture] = useState<LocalOldPicture | null>(null);
 
   useEffect(() => {
     void loadLocalPictures(0);
@@ -82,6 +84,15 @@ function HistoryAlbumPage({
     }, 2000);
     return () => window.clearInterval(timer);
   }, [downloadTasks]);
+
+  useEffect(() => {
+    if (!previewPicture) return;
+    function closeOnEscape(event: KeyboardEvent) {
+      if (event.key === "Escape") setPreviewPicture(null);
+    }
+    window.addEventListener("keydown", closeOnEscape);
+    return () => window.removeEventListener("keydown", closeOnEscape);
+  }, [previewPicture]);
 
   async function loadLocalPictures(offset: number) {
     setLocalPending(true);
@@ -228,7 +239,7 @@ function HistoryAlbumPage({
         <div className="section-head split">
           <div>
             <p className="home-eyebrow">本地图册</p>
-            <h2>已下载到 picture 目录的图片</h2>
+            <h2>已下载的图片</h2>
           </div>
           <button
             className="home-secondary compact"
@@ -247,20 +258,25 @@ function HistoryAlbumPage({
               {localPictures.map((picture) => (
                 <article className="picture-tile" key={picture.local_download_task_id}>
                   <button
+                    className="picture-preview-button"
                     type="button"
-                    onClick={() =>
-                      window.open(
-                        getLocalDownloadPreviewUrl(picture.local_download_task_id),
-                        "_blank",
-                        "noopener,noreferrer",
-                      )
-                    }
+                    onClick={() => setPreviewPicture(picture)}
                   >
                     <img src={getLocalDownloadPreviewUrl(picture.local_download_task_id)} alt={picture.name} />
                   </button>
-                  <div>
+                  <div className="picture-tile-body">
                     <strong>{picture.name}</strong>
                     <span>{formatSize(picture.size)}</span>
+                    <button
+                      className="home-secondary compact picture-download-button"
+                      type="button"
+                      onClick={() => {
+                        window.location.href = getLocalDownloadFileUrl(picture.local_download_task_id);
+                      }}
+                    >
+                      <Download size={15} />
+                      下载到本地
+                    </button>
                   </div>
                 </article>
               ))}
@@ -282,6 +298,38 @@ function HistoryAlbumPage({
           </div>
         )}
       </section>
+
+      {previewPicture && (
+        <div className="picture-preview-overlay" role="dialog" aria-modal="true" aria-label="图片预览">
+          <button className="picture-preview-backdrop" type="button" onClick={() => setPreviewPicture(null)} />
+          <div className="picture-preview-dialog">
+            <div className="picture-preview-header">
+              <strong>{previewPicture.name}</strong>
+              <div>
+                <button
+                  className="home-secondary compact"
+                  type="button"
+                  onClick={() => {
+                    window.location.href = getLocalDownloadFileUrl(previewPicture.local_download_task_id);
+                  }}
+                >
+                  <Download size={16} />
+                  下载到本地
+                </button>
+                <button
+                  className="icon-button light"
+                  type="button"
+                  title="关闭预览"
+                  onClick={() => setPreviewPicture(null)}
+                >
+                  <X size={18} />
+                </button>
+              </div>
+            </div>
+            <img src={getLocalDownloadPreviewUrl(previewPicture.local_download_task_id)} alt={previewPicture.name} />
+          </div>
+        </div>
+      )}
 
       <section className="catalog-search-panel" aria-label="历史图片筛选">
         <div className="catalog-toolbar">

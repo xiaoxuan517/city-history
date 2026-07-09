@@ -4,9 +4,11 @@ from typing import Any
 
 from pydantic import BaseModel, Field, model_validator
 
+from app.config.settings import settings
+
 
 class AListFileListRequest(BaseModel):
-    path: str = "/百度网盘/全国地方县志古籍收藏"
+    path: str = settings.gazetteer_file_root_path
     password: str = ""
     page: int = Field(default=1, ge=1)
     per_page: int = Field(default=100, ge=1)
