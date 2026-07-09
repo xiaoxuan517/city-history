@@ -2,7 +2,7 @@ import { Landmark } from "lucide-react";
 
 import UserMenu from "./UserMenu";
 
-export type SiteNavKey = "home" | "gazetteers" | "knowledgeBase" | "assistant" | "historyAlbum";
+export type SiteNavKey = "home" | "gazetteers" | "knowledgeBase" | "assistant" | "historyAlbum" | "favorites";
 
 type SiteNavProps = {
   active: SiteNavKey;
@@ -13,6 +13,7 @@ type SiteNavProps = {
   onKnowledgeBase: () => void;
   onAssistant: () => void;
   onHistoryAlbum: () => void;
+  onFavorites: () => void;
   onLogin: () => void;
   onLogout: () => void;
 };
@@ -26,6 +27,7 @@ function SiteNav({
   onKnowledgeBase,
   onAssistant,
   onHistoryAlbum,
+  onFavorites,
   onLogin,
   onLogout,
 }: SiteNavProps) {
@@ -47,6 +49,9 @@ function SiteNav({
         </button>
         <button type="button" className={active === "historyAlbum" ? "active" : undefined} onClick={onHistoryAlbum}>
           历史图册
+        </button>
+        <button type="button" className={active === "favorites" ? "active" : undefined} onClick={onFavorites}>
+          我的收藏
         </button>
       </div>
       <UserMenu isAuthenticated={isAuthenticated} username={username} onLogin={onLogin} onLogout={onLogout} />

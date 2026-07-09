@@ -6,6 +6,7 @@ import {
   ImageIcon,
   RefreshCw,
   Search,
+  Star,
   X,
 } from "lucide-react";
 
@@ -18,6 +19,7 @@ import {
   listOfflineDownloadTasks,
   listOldPictures,
 } from "../api";
+import { loadFavoriteOldPictures, toggleFavoriteOldPicture } from "../favorites";
 import type { AListTask, LocalOldPicture, OldPicture } from "../types";
 import SiteNav from "./SiteNav";
 
@@ -33,6 +35,7 @@ type HistoryAlbumPageProps = {
   onGazetteers: () => void;
   onKnowledgeBase: () => void;
   onAssistant: () => void;
+  onFavorites: () => void;
   onLogin: () => void;
   onLogout: () => void;
 };
@@ -45,6 +48,7 @@ function HistoryAlbumPage({
   onGazetteers,
   onKnowledgeBase,
   onAssistant,
+  onFavorites,
   onLogin,
   onLogout,
 }: HistoryAlbumPageProps) {
@@ -61,6 +65,9 @@ function HistoryAlbumPage({
   const [downloadTasks, setDownloadTasks] = useState<Record<string, AListTask>>({});
   const [downloadErrors, setDownloadErrors] = useState<Record<string, string>>({});
   const [previewPicture, setPreviewPicture] = useState<LocalOldPicture | null>(null);
+  const [favoritePictureIds, setFavoritePictureIds] = useState<Set<string>>(
+    () => new Set(loadFavoriteOldPictures().map((item) => item.local_download_task_id)),
+  );
 
   useEffect(() => {
     void loadLocalPictures(0);
@@ -196,6 +203,7 @@ function HistoryAlbumPage({
         onKnowledgeBase={onKnowledgeBase}
         onAssistant={onAssistant}
         onHistoryAlbum={() => undefined}
+        onFavorites={onFavorites}
         onLogin={onLogin}
         onLogout={onLogout}
       />
@@ -263,6 +271,17 @@ function HistoryAlbumPage({
                   <div className="picture-tile-body">
                     <strong>{picture.name}</strong>
                     <span>{formatSize(picture.size)}</span>
+                    <button
+                      className={`home-secondary compact picture-download-button ${favoritePictureIds.has(picture.local_download_task_id) ? "active-favorite" : ""}`}
+                      type="button"
+                      onClick={() => togglePictureFavorite(picture)}
+                    >
+                      <Star
+                        size={15}
+                        fill={favoritePictureIds.has(picture.local_download_task_id) ? "currentColor" : "none"}
+                      />
+                      {favoritePictureIds.has(picture.local_download_task_id) ? "已收藏" : "收藏"}
+                    </button>
                     <button
                       className="home-secondary compact picture-download-button"
                       type="button"
@@ -427,6 +446,11 @@ function HistoryAlbumPage({
       )}
     </main>
   );
+
+  function togglePictureFavorite(picture: LocalOldPicture) {
+    toggleFavoriteOldPicture(picture);
+    setFavoritePictureIds(new Set(loadFavoriteOldPictures().map((item) => item.local_download_task_id)));
+  }
 }
 
 function PictureRow({

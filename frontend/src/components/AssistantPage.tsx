@@ -22,6 +22,7 @@ type AssistantPageProps = {
   onGazetteers: () => void;
   onKnowledgeBase: () => void;
   onHistoryAlbum: () => void;
+  onFavorites: () => void;
   onLogin: () => void;
   onLogout: () => void;
   onOpenKnowledgeBase: (kbId: number) => void;
@@ -36,6 +37,7 @@ function AssistantPage({
   onGazetteers,
   onKnowledgeBase,
   onHistoryAlbum,
+  onFavorites,
   onLogin,
   onLogout,
   onOpenKnowledgeBase,
@@ -96,6 +98,7 @@ function AssistantPage({
         onKnowledgeBase={onKnowledgeBase}
         onAssistant={() => undefined}
         onHistoryAlbum={onHistoryAlbum}
+        onFavorites={onFavorites}
         onLogin={onLogin}
         onLogout={onLogout}
       />

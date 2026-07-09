@@ -21,6 +21,7 @@ type HomePageProps = {
   onEnterKnowledgeBase: () => void;
   onEnterAssistant: () => void;
   onEnterHistoryAlbum: () => void;
+  onEnterFavorites: () => void;
   onLogin: () => void;
   onLogout: () => void;
 };
@@ -71,6 +72,7 @@ function HomePage({
   onEnterKnowledgeBase,
   onEnterAssistant,
   onEnterHistoryAlbum,
+  onEnterFavorites,
   onLogin,
   onLogout,
 }: HomePageProps) {
@@ -85,6 +87,7 @@ function HomePage({
         onKnowledgeBase={onEnterKnowledgeBase}
         onAssistant={onEnterAssistant}
         onHistoryAlbum={onEnterHistoryAlbum}
+        onFavorites={onEnterFavorites}
         onLogin={onLogin}
         onLogout={onLogout}
       />

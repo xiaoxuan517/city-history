@@ -1099,6 +1099,47 @@ body {
   color: #1d3b2f;
 }
 
+.favorites-page {
+  padding-bottom: 72px;
+}
+
+.favorites-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  width: min(1180px, calc(100% - 36px));
+  margin: 0 auto 18px;
+  padding: 14px;
+  border: 1px solid rgba(91, 62, 33, 0.14);
+  border-radius: 8px;
+  background: rgba(255, 250, 240, 0.7);
+}
+
+.favorites-tabs button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 38px;
+  padding: 0 14px;
+  border: 1px solid rgba(29, 59, 47, 0.14);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.62);
+  color: #43524b;
+  font-weight: 800;
+}
+
+.favorites-tabs button.active,
+.active-favorite {
+  border-color: rgba(154, 91, 24, 0.22) !important;
+  background: rgba(154, 91, 24, 0.12) !important;
+  color: #9a5b18 !important;
+}
+
+.favorites-picture-section {
+  margin-top: 0;
+}
+
 button,
 input,
 select,

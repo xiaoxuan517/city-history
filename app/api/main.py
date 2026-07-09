@@ -108,5 +108,10 @@ def history_album_index() -> FileResponse:
     return FileResponse(FRONTEND_DIST_DIR / "index.html")
 
 
+@app.get("/favorites", include_in_schema=False)
+def favorites_index() -> FileResponse:
+    return FileResponse(FRONTEND_DIST_DIR / "index.html")
+
+
 if FRONTEND_DIST_DIR.exists():
     app.mount("/", StaticFiles(directory=FRONTEND_DIST_DIR, html=True), name="frontend")

@@ -12,6 +12,7 @@ type KnowledgeBaseListPageProps = {
   onCreateFromGazetteer: () => void;
   onAssistant: () => void;
   onHistoryAlbum: () => void;
+  onFavorites: () => void;
   onHome: () => void;
   onLibrary: () => void;
   onLogin: () => void;
@@ -29,6 +30,7 @@ function KnowledgeBaseListPage({
   onCreateFromGazetteer,
   onAssistant,
   onHistoryAlbum,
+  onFavorites,
   onHome,
   onLibrary,
   onLogin,
@@ -47,6 +49,7 @@ function KnowledgeBaseListPage({
         onKnowledgeBase={() => undefined}
         onAssistant={onAssistant}
         onHistoryAlbum={onHistoryAlbum}
+        onFavorites={onFavorites}
         onLogin={onLogin}
         onLogout={onLogout}
       />

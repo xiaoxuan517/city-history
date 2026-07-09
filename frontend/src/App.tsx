@@ -27,6 +27,7 @@ import AssistantPage from "./components/AssistantPage";
 import AuthPanel from "./components/AuthPanel";
 import ChatPanel from "./components/ChatPanel";
 import DocumentPanel from "./components/DocumentPanel";
+import FavoritesPage from "./components/FavoritesPage";
 import GazetteerPage from "./components/GazetteerPage";
 import HistoryAlbumPage from "./components/HistoryAlbumPage";
 import HomePage from "./components/HomePage";
@@ -58,12 +59,13 @@ const welcomeMessage: ChatMessage = {
 const tokenStorageKey = "rag_access_token";
 const userStorageKey = "rag_current_user";
 const authNoticeStorageKey = "rag_auth_notice";
-type AppView = "home" | "auth" | "kbList" | "workspace" | "gazetteers" | "assistant" | "historyAlbum";
+type AppView = "home" | "auth" | "kbList" | "workspace" | "gazetteers" | "assistant" | "historyAlbum" | "favorites";
 
 function pathToView(pathname: string): AppView {
   if (pathname.startsWith("/login")) return "auth";
   if (pathname.startsWith("/assistant")) return "assistant";
   if (pathname.startsWith("/history-album")) return "historyAlbum";
+  if (pathname.startsWith("/favorites")) return "favorites";
   if (/^\/workspace\/\d+/.test(pathname)) return "workspace";
   if (pathname.startsWith("/workspace")) return "kbList";
   if (pathname.startsWith("/gazetteers")) return "gazetteers";
@@ -277,6 +279,8 @@ function App() {
               ? "/assistant"
               : nextView === "historyAlbum"
                 ? "/history-album"
+                : nextView === "favorites"
+                  ? "/favorites"
                 : "/";
     if (window.location.pathname !== nextPath) {
       window.history.pushState(null, "", nextPath);
@@ -751,6 +755,7 @@ function App() {
         onEnterKnowledgeBase={() => navigateTo("kbList")}
         onEnterAssistant={() => navigateTo("assistant")}
         onEnterHistoryAlbum={() => navigateTo("historyAlbum")}
+        onEnterFavorites={() => navigateTo("favorites")}
         onLogin={() => navigateTo("auth")}
         onLogout={logout}
       />
@@ -766,6 +771,7 @@ function App() {
         onHome={() => navigateTo("home")}
         onAssistant={() => navigateTo("assistant")}
         onHistoryAlbum={() => navigateTo("historyAlbum")}
+        onFavorites={() => navigateTo("favorites")}
         onCreateKnowledgeBaseFromDownload={createKbFromDownload}
         onKnowledgeBase={() => navigateTo("kbList")}
         onLogin={() => navigateTo("auth")}
@@ -785,8 +791,28 @@ function App() {
         onGazetteers={() => navigateTo("gazetteers")}
         onKnowledgeBase={() => navigateTo("kbList")}
         onAssistant={() => navigateTo("assistant")}
+        onFavorites={() => navigateTo("favorites")}
         onLogin={() => navigateTo("auth")}
         onLogout={logout}
+      />
+    );
+  }
+
+  if (view === "favorites") {
+    return (
+      <FavoritesPage
+        apiStatus={apiStatus}
+        isAuthenticated={Boolean(apiToken && currentUser)}
+        username={currentUser?.username}
+        onCreateKnowledgeBaseFromDownload={createKbFromDownload}
+        onHome={() => navigateTo("home")}
+        onGazetteers={() => navigateTo("gazetteers")}
+        onKnowledgeBase={() => navigateTo("kbList")}
+        onAssistant={() => navigateTo("assistant")}
+        onHistoryAlbum={() => navigateTo("historyAlbum")}
+        onLogin={() => navigateTo("auth")}
+        onLogout={logout}
+        onOpenKnowledgeBase={openKnowledgeBase}
       />
     );
   }
@@ -802,6 +828,7 @@ function App() {
         onGazetteers={() => navigateTo("gazetteers")}
         onKnowledgeBase={() => navigateTo("kbList")}
         onHistoryAlbum={() => navigateTo("historyAlbum")}
+        onFavorites={() => navigateTo("favorites")}
         onLogin={() => navigateTo("auth")}
         onLogout={logout}
         onOpenKnowledgeBase={openKnowledgeBase}
@@ -824,6 +851,7 @@ function App() {
         onCreateFromGazetteer={() => navigateTo("gazetteers")}
         onAssistant={() => navigateTo("assistant")}
         onHistoryAlbum={() => navigateTo("historyAlbum")}
+        onFavorites={() => navigateTo("favorites")}
         onHome={() => navigateTo("home")}
         onLibrary={() => navigateTo("gazetteers")}
         onLogin={() => navigateTo("auth")}
@@ -845,6 +873,7 @@ function App() {
         onKnowledgeBase={() => navigateTo("kbList")}
         onAssistant={() => navigateTo("assistant")}
         onHistoryAlbum={() => navigateTo("historyAlbum")}
+        onFavorites={() => navigateTo("favorites")}
         onLogin={() => navigateTo("auth")}
         onLogout={logout}
       />

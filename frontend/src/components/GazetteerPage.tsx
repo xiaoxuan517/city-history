@@ -7,6 +7,7 @@ import {
   FileText,
   RefreshCw,
   Search,
+  Star,
 } from "lucide-react";
 
 import {
@@ -16,6 +17,7 @@ import {
   listGazetteerFiles,
   listOfflineDownloadTasks,
 } from "../api";
+import { loadFavoriteGazetteers, toggleFavoriteGazetteer } from "../favorites";
 import type { AListTask, GazetteerFile, KnowledgeBase } from "../types";
 import SiteNav from "./SiteNav";
 
@@ -30,6 +32,7 @@ type GazetteerPageProps = {
   onHome: () => void;
   onAssistant: () => void;
   onHistoryAlbum: () => void;
+  onFavorites: () => void;
   onKnowledgeBase: () => void;
   onLogin: () => void;
   onLogout: () => void;
@@ -44,6 +47,7 @@ function GazetteerPage({
   onHome,
   onAssistant,
   onHistoryAlbum,
+  onFavorites,
   onKnowledgeBase,
   onLogin,
   onLogout,
@@ -59,6 +63,9 @@ function GazetteerPage({
   const [downloadTasks, setDownloadTasks] = useState<Record<string, AListTask>>({});
   const [downloadErrors, setDownloadErrors] = useState<Record<string, string>>({});
   const [knowledgeBasePending, setKnowledgeBasePending] = useState<Record<string, boolean>>({});
+  const [favoritePaths, setFavoritePaths] = useState<Set<string>>(
+    () => new Set(loadFavoriteGazetteers().map((item) => item.full_path)),
+  );
 
   useEffect(() => {
     void loadGazetteers(page, submittedKeyword);
@@ -202,6 +209,7 @@ function GazetteerPage({
         onKnowledgeBase={onKnowledgeBase}
         onAssistant={onAssistant}
         onHistoryAlbum={onHistoryAlbum}
+        onFavorites={onFavorites}
         onLogin={onLogin}
         onLogout={onLogout}
       />
@@ -325,8 +333,10 @@ function GazetteerPage({
               knowledgeBasePending={Boolean(knowledgeBasePending[item.full_path])}
               pending={pending}
               isAuthenticated={isAuthenticated}
+              isFavorite={favoritePaths.has(item.full_path)}
               onLogin={onLogin}
               onKnowledgeBase={createKnowledgeBaseFromItem}
+              onToggleFavorite={toggleGazetteerFavorite}
               onStartDownload={startOfflineDownload}
             />
           ))}
@@ -340,6 +350,11 @@ function GazetteerPage({
       )}
     </main>
   );
+
+  function toggleGazetteerFavorite(item: GazetteerFile) {
+    toggleFavoriteGazetteer(item);
+    setFavoritePaths(new Set(loadFavoriteGazetteers().map((favorite) => favorite.full_path)));
+  }
 }
 
 function GazetteerRow({
@@ -349,8 +364,10 @@ function GazetteerRow({
   knowledgeBasePending,
   pending,
   isAuthenticated,
+  isFavorite,
   onLogin,
   onKnowledgeBase,
+  onToggleFavorite,
   onStartDownload,
 }: {
   item: GazetteerFile;
@@ -359,8 +376,10 @@ function GazetteerRow({
   knowledgeBasePending: boolean;
   pending: boolean;
   isAuthenticated: boolean;
+  isFavorite: boolean;
   onLogin: () => void;
   onKnowledgeBase: (item: GazetteerFile) => void;
+  onToggleFavorite: (item: GazetteerFile) => void;
   onStartDownload: (item: GazetteerFile) => void;
 }) {
   const sourcePath = item.full_path;
@@ -389,6 +408,15 @@ function GazetteerRow({
         {downloadError && <p className="download-error">{downloadError}</p>}
       </div>
       <div className="gazetteer-actions">
+        <button
+          type="button"
+          className={`text-action ${isFavorite ? "active-favorite" : ""}`}
+          title={isFavorite ? "取消收藏" : "收藏县志"}
+          onClick={() => onToggleFavorite(item)}
+        >
+          <Star size={16} fill={isFavorite ? "currentColor" : "none"} />
+          <span>{isFavorite ? "已收藏" : "收藏"}</span>
+        </button>
         <button
           type="button"
           className="text-action"
