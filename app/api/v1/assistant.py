@@ -24,4 +24,5 @@ def assistant_chat(
         user_id=current_user.id,
         message=payload.message,
         state=payload.state,
+        session_id=payload.session_id,
     )

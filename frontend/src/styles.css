@@ -2107,12 +2107,114 @@ button {
   min-height: 100vh;
 }
 
+.assistant-page-shell {
+  width: min(1240px, calc(100% - 36px));
+  margin: 0 auto;
+  padding: 30px 0 48px;
+}
+
+.assistant-layout {
+  display: grid;
+  grid-template-columns: 300px minmax(0, 1fr);
+  gap: 18px;
+  margin-top: 18px;
+}
+
+.assistant-session-panel {
+  display: grid;
+  align-content: start;
+  gap: 12px;
+  min-width: 0;
+  padding: 16px;
+  border: 1px solid rgba(91, 62, 33, 0.14);
+  border-radius: 8px;
+  background: rgba(255, 250, 240, 0.72);
+}
+
+.assistant-session-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.assistant-session-head h2 {
+  margin: 0;
+  color: #17251f;
+  font-size: 16px;
+}
+
+.assistant-session-head button,
+.assistant-session-delete {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border: 1px solid rgba(29, 59, 47, 0.14);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.62);
+  color: #1d3b2f;
+}
+
+.assistant-session-list {
+  display: grid;
+  gap: 8px;
+}
+
+.assistant-session-list p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.assistant-session-item {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 6px;
+  align-items: stretch;
+}
+
+.assistant-session-select {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 8px;
+  align-items: center;
+  min-width: 0;
+  min-height: 46px;
+  padding: 8px 10px;
+  border: 1px solid rgba(29, 59, 47, 0.12);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.56);
+  color: #1d3b2f;
+  text-align: left;
+}
+
+.assistant-session-item.active .assistant-session-select {
+  border-color: rgba(154, 91, 24, 0.22);
+  background: rgba(154, 91, 24, 0.12);
+  color: #9a5b18;
+}
+
+.assistant-session-select span,
+.assistant-session-select small {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.assistant-session-select small {
+  grid-column: 2;
+  color: #7b8a83;
+  font-size: 12px;
+  font-weight: 800;
+}
+
 .assistant-shell {
   display: grid;
   gap: 18px;
-  max-width: 1080px;
-  margin: 0 auto;
-  padding: 36px clamp(18px, 5vw, 72px) 48px;
+  min-width: 0;
 }
 
 .assistant-hero {
@@ -2138,8 +2240,11 @@ button {
 
 .assistant-chat {
   display: grid;
+  align-content: start;
   gap: 14px;
   min-height: 420px;
+  max-height: calc(100vh - 310px);
+  overflow: auto;
   padding: 18px;
   border: 1px solid var(--line);
   border-radius: 8px;
@@ -2250,6 +2355,15 @@ button {
   border: 1px solid var(--line);
   border-radius: 8px;
   background: rgba(255, 255, 255, 0.72);
+}
+
+.assistant-error {
+  margin: 0;
+  padding: 10px 12px;
+  border: 1px solid rgba(180, 35, 24, 0.24);
+  border-radius: 8px;
+  background: rgba(254, 242, 242, 0.72);
+  color: var(--danger);
 }
 
 .composer {
@@ -2365,6 +2479,15 @@ textarea:disabled {
 
   .app-shell {
     grid-template-columns: 1fr;
+  }
+
+  .assistant-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .assistant-session-panel {
+    max-height: 280px;
+    overflow: auto;
   }
 
   .auth-panel {

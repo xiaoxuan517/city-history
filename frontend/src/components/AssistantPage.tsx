@@ -1,8 +1,8 @@
-import { FormEvent, useState } from "react";
-import { Bot, BookOpen, Download, Send } from "lucide-react";
+import { FormEvent, useEffect, useState } from "react";
+import { Bot, BookOpen, Download, MessageSquare, Plus, Send, Trash2 } from "lucide-react";
 
-import { chatWithAssistant } from "../api";
-import type { AssistantAction } from "../types";
+import { chatWithAssistant, deleteChatSession, listChatMessages, listChatSessions } from "../api";
+import type { AssistantAction, ChatSession, StoredChatMessage } from "../types";
 import SiteNav from "./SiteNav";
 
 type AssistantMessage = {
@@ -43,15 +43,20 @@ function AssistantPage({
   onOpenKnowledgeBase,
 }: AssistantPageProps) {
   const [messages, setMessages] = useState<AssistantMessage[]>([
-    {
-      id: "welcome",
-      role: "assistant",
-      content: "我可以帮你检索县志、创建下载任务、查看进度，并把已下载县志创建为知识库。",
-    },
+    welcomeAssistantMessage(),
   ]);
   const [state, setState] = useState<Record<string, unknown>>({});
+  const [sessions, setSessions] = useState<ChatSession[]>([]);
+  const [activeSessionId, setActiveSessionId] = useState<number | undefined>(undefined);
   const [input, setInput] = useState("");
   const [pending, setPending] = useState(false);
+  const [sessionPending, setSessionPending] = useState(false);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    void refreshSessions();
+  }, [apiToken, isAuthenticated]);
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -64,19 +69,27 @@ function AssistantPage({
 
     setInput("");
     setPending(true);
-    setMessages((current) => [...current, { id: crypto.randomUUID(), role: "user", content: text }]);
+    setError("");
+    setMessages((current) => [...current, { id: createMessageId(), role: "user", content: text }]);
     try {
-      const response = await chatWithAssistant(apiToken, { message: text, state });
-      setState(response.state);
+      const response = await chatWithAssistant(apiToken, { message: text, state, session_id: activeSessionId });
+      setState(isRecord(response.state) ? response.state : {});
+      if (response.session_id) setActiveSessionId(response.session_id);
       setMessages((current) => [
         ...current,
-        { id: crypto.randomUUID(), role: "assistant", content: response.answer, actions: response.actions },
+        {
+          id: createMessageId(),
+          role: "assistant",
+          content: typeof response.answer === "string" ? response.answer : "智能助手已返回结果。",
+          actions: Array.isArray(response.actions) ? response.actions : [],
+        },
       ]);
+      await refreshSessions(response.session_id ?? activeSessionId);
     } catch (error) {
       setMessages((current) => [
         ...current,
         {
-          id: crypto.randomUUID(),
+          id: createMessageId(),
           role: "assistant",
           content: error instanceof Error ? error.message : "智能助手请求失败",
           error: true,
@@ -85,6 +98,60 @@ function AssistantPage({
     } finally {
       setPending(false);
     }
+  }
+
+  async function refreshSessions(preferredSessionId = activeSessionId) {
+    if (!apiToken) return;
+    try {
+      const allSessions = await listChatSessions(apiToken);
+      const assistantSessions = allSessions.filter((session) => session.kb_id === null);
+      setSessions(assistantSessions);
+      if (preferredSessionId && assistantSessions.some((session) => session.id === preferredSessionId)) {
+        setActiveSessionId(preferredSessionId);
+      }
+    } catch (error) {
+      setError(error instanceof Error ? error.message : "加载会话失败");
+    }
+  }
+
+  async function selectSession(session: ChatSession) {
+    if (!apiToken || pending) return;
+    setSessionPending(true);
+    setError("");
+    try {
+      const storedMessages = await listChatMessages(apiToken, session.id);
+      setActiveSessionId(session.id);
+      setState({});
+      setMessages(storedMessages.length ? storedMessages.map(toAssistantMessage) : [welcomeAssistantMessage()]);
+    } catch (error) {
+      setError(error instanceof Error ? error.message : "加载会话消息失败");
+    } finally {
+      setSessionPending(false);
+    }
+  }
+
+  async function removeSession(session: ChatSession) {
+    if (!apiToken || pending) return;
+    const confirmed = window.confirm(`确认删除会话“${session.title || `会话 ${session.id}`}”？`);
+    if (!confirmed) return;
+    setSessionPending(true);
+    setError("");
+    try {
+      await deleteChatSession(apiToken, session.id);
+      setSessions((current) => current.filter((item) => item.id !== session.id));
+      if (activeSessionId === session.id) startNewSession();
+    } catch (error) {
+      setError(error instanceof Error ? error.message : "删除会话失败");
+    } finally {
+      setSessionPending(false);
+    }
+  }
+
+  function startNewSession() {
+    setActiveSessionId(undefined);
+    setState({});
+    setInput("");
+    setMessages([welcomeAssistantMessage()]);
   }
 
   return (
@@ -103,7 +170,7 @@ function AssistantPage({
         onLogout={onLogout}
       />
 
-      <section className="assistant-shell">
+      <section className="assistant-page-shell">
         <header className="assistant-hero">
           <div>
             <p className="home-eyebrow">智能助手</p>
@@ -113,36 +180,77 @@ function AssistantPage({
           <span className={apiStatus === "可用" ? "tone-ok" : "tone-bad"}>服务{apiStatus}</span>
         </header>
 
-        <div className="assistant-chat">
-          {messages.map((message) => (
-            <article className={`assistant-message ${message.role} ${message.error ? "error" : ""}`} key={message.id}>
-              <div className="assistant-avatar">{message.role === "assistant" ? <Bot size={18} /> : "你"}</div>
-              <div className="assistant-bubble">
-                <p>{message.content}</p>
-                {message.actions?.map((action, index) => (
-                  <AssistantActionView
-                    action={action}
-                    key={`${action.type}-${index}`}
-                    onOpenKnowledgeBase={onOpenKnowledgeBase}
-                  />
-                ))}
-              </div>
-            </article>
-          ))}
-        </div>
+        <section className="assistant-layout">
+          <aside className="assistant-session-panel" aria-label="智能助手会话">
+            <div className="assistant-session-head">
+              <h2>会话记录</h2>
+              <button type="button" title="新会话" onClick={startNewSession} disabled={pending || sessionPending}>
+                <Plus size={17} />
+              </button>
+            </div>
+            <div className="assistant-session-list">
+              {sessions.map((session) => (
+                <div className={`assistant-session-item ${activeSessionId === session.id ? "active" : ""}`} key={session.id}>
+                  <button
+                    className="assistant-session-select"
+                    type="button"
+                    onClick={() => void selectSession(session)}
+                    disabled={pending || sessionPending}
+                  >
+                    <MessageSquare size={16} />
+                    <span>{session.title || `会话 ${session.id}`}</span>
+                    <small>{formatDate(session.updated_at)}</small>
+                  </button>
+                  <button
+                    className="assistant-session-delete"
+                    type="button"
+                    title="删除会话"
+                    disabled={pending || sessionPending}
+                    onClick={() => void removeSession(session)}
+                  >
+                    <Trash2 size={15} />
+                  </button>
+                </div>
+              ))}
+              {!sessions.length && <p>还没有历史会话。</p>}
+            </div>
+          </aside>
 
-        <form className="assistant-composer" onSubmit={submit}>
-          <input
-            value={input}
-            onChange={(event) => setInput(event.target.value)}
-            placeholder="例如：帮我找江宁县志；下载第 1 本；查看下载进度；创建知识库"
-            disabled={pending}
-          />
-          <button type="submit" disabled={pending || !input.trim()}>
-            <Send size={18} />
-            {pending ? "处理中" : "发送"}
-          </button>
-        </form>
+          <section className="assistant-shell">
+            {error && <p className="assistant-error">{error}</p>}
+
+            <div className="assistant-chat">
+              {messages.map((message) => (
+                <article className={`assistant-message ${message.role} ${message.error ? "error" : ""}`} key={message.id}>
+                  <div className="assistant-avatar">{message.role === "assistant" ? <Bot size={18} /> : "你"}</div>
+                  <div className="assistant-bubble">
+                    <p>{message.content}</p>
+                    {message.actions?.map((action, index) => (
+                      <AssistantActionView
+                        action={action}
+                        key={`${action.type}-${index}`}
+                        onOpenKnowledgeBase={onOpenKnowledgeBase}
+                      />
+                    ))}
+                  </div>
+                </article>
+              ))}
+            </div>
+
+            <form className="assistant-composer" onSubmit={submit}>
+              <input
+                value={input}
+                onChange={(event) => setInput(event.target.value)}
+                placeholder="例如：帮我找江宁县志；下载第 1 本；查看下载进度；创建知识库"
+                disabled={pending || sessionPending}
+              />
+              <button type="submit" disabled={pending || sessionPending || !input.trim()}>
+                <Send size={18} />
+                {pending ? "处理中" : "发送"}
+              </button>
+            </form>
+          </section>
+        </section>
       </section>
     </main>
   );
@@ -155,8 +263,10 @@ function AssistantActionView({
   action: AssistantAction;
   onOpenKnowledgeBase: (kbId: number) => void;
 }) {
+  const payload = isRecord(action.payload) ? action.payload : {};
+
   if (action.type === "gazetteer_candidates") {
-    const items = Array.isArray(action.payload.items) ? action.payload.items : [];
+    const items = Array.isArray(payload.items) ? payload.items : [];
     return (
       <div className="assistant-card-list">
         {items.map((raw, index) => {
@@ -174,7 +284,7 @@ function AssistantActionView({
   }
 
   if (action.type === "download_task") {
-    const task = (action.payload.task || {}) as Record<string, unknown>;
+    const task = isRecord(payload.task) ? payload.task : {};
     return (
       <div className="assistant-action-card compact">
         <Download size={17} />
@@ -188,16 +298,48 @@ function AssistantActionView({
   }
 
   if (action.type === "knowledge_base") {
-    const id = Number(action.payload.id);
+    const id = Number(payload.id);
     return (
       <button className="assistant-open-kb" type="button" onClick={() => onOpenKnowledgeBase(id)} disabled={!id}>
         <BookOpen size={17} />
-        打开知识库：{String(action.payload.name || id)}
+        打开知识库：{String(payload.name || id)}
       </button>
     );
   }
 
   return null;
+}
+
+function welcomeAssistantMessage(): AssistantMessage {
+  return {
+    id: "welcome",
+    role: "assistant",
+    content: "我可以帮你检索县志、创建下载任务、查看进度，并把已下载县志创建为知识库。",
+  };
+}
+
+function toAssistantMessage(message: StoredChatMessage): AssistantMessage {
+  return {
+    id: `stored-${message.id}`,
+    role: message.role === "assistant" ? "assistant" : "user",
+    content: message.content,
+  };
+}
+
+function formatDate(value: string) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  return date.toLocaleDateString("zh-CN");
+}
+
+function createMessageId() {
+  return typeof crypto !== "undefined" && "randomUUID" in crypto
+    ? crypto.randomUUID()
+    : `message-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
 export default AssistantPage;

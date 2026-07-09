@@ -8,9 +8,11 @@ from typing import Any
 from langchain.agents import create_agent
 from langchain_core.messages import AIMessage
 from langchain_core.tools import tool
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.agent.create_agent import build_model
+from app.db.models.chat import ChatMessage, ChatRole, ChatRun, ChatRunEvent, ChatRunStatus, ChatSession
 from app.db.models.gazetteer_file import GazetteerFile
 from app.schemas.alist import AListOfflineDownloadRequest, AListTask, AListTaskListRequest
 from app.schemas.assistant import AssistantAction, AssistantChatResponse
@@ -36,16 +38,49 @@ class AssistantService:
         self._kb = kb_service or KnowledgeBaseService()
         self._documents = document_service or DocumentService()
 
-    def chat(self, session: Session, *, user_id: int, message: str, state: dict[str, Any]) -> AssistantChatResponse:
+    def chat(
+        self,
+        session: Session,
+        *,
+        user_id: int,
+        message: str,
+        state: dict[str, Any],
+        session_id: int | None = None,
+    ) -> AssistantChatResponse:
         text = message.strip()
         next_state = dict(state or {})
         actions: list[AssistantAction] = []
+        chat_session = _get_or_create_assistant_session(session, user_id=user_id, session_id=session_id, question=text)
+        if not next_state:
+            next_state = _latest_assistant_state(session, chat_session_id=chat_session.id)
+        next_state.setdefault("assistant_session_id", chat_session.id)
+        session.add(ChatMessage(session_id=chat_session.id, role=ChatRole.USER, content=text, references=[]))
+        session.commit()
+        chat_run = _create_assistant_run(session, user_id=user_id, chat_session_id=chat_session.id, question=text)
+        event_sequence = 0
+
+        def record_tool_result(tool_name: str, response: AssistantChatResponse) -> None:
+            nonlocal event_sequence
+            event_sequence += 1
+            _record_assistant_run_event(
+                session,
+                chat_run=chat_run,
+                event_type="tool_result",
+                sequence=event_sequence,
+                payload={
+                    "tool_name": tool_name,
+                    "answer": response.answer,
+                    "actions": [action.model_dump() for action in response.actions],
+                    "state": response.state,
+                },
+            )
 
         @tool
         def search_gazetteer_files(query: str) -> str:
             """Search gazetteer files by place name, old place name, title, or path."""
             response = self._search(session, text=query, state=next_state)
             actions.extend(response.actions)
+            record_tool_result("search_gazetteer_files", response)
             return _tool_payload(answer=response.answer, state=response.state, actions=response.actions)
 
         @tool
@@ -53,6 +88,7 @@ class AssistantService:
             """Create a download task for one gazetteer from the latest search result list. Index starts from 1."""
             response = self._download_selected(session, text=f"下载第 {index} 本", state=next_state)
             actions.extend(response.actions)
+            record_tool_result("download_gazetteer", response)
             return _tool_payload(answer=response.answer, state=response.state, actions=response.actions)
 
         @tool
@@ -60,6 +96,7 @@ class AssistantService:
             """Get current download task status and progress for the selected gazetteer."""
             response = self._download_status(next_state)
             actions.extend(response.actions)
+            record_tool_result("get_download_status", response)
             return _tool_payload(answer=response.answer, state=response.state, actions=response.actions)
 
         @tool
@@ -67,21 +104,63 @@ class AssistantService:
             """Create a knowledge base from the selected downloaded gazetteer, or open existing same-name knowledge base."""
             response = self._create_or_open_kb(session, user_id=user_id, state=next_state)
             actions.extend(response.actions)
+            record_tool_result("create_or_open_knowledge_base", response)
             return _tool_payload(answer=response.answer, state=response.state, actions=response.actions)
 
-        agent = create_agent(
-            model=build_model(),
-            tools=[
-                search_gazetteer_files,
-                download_gazetteer,
-                get_download_status,
-                create_or_open_knowledge_base,
-            ],
-            system_prompt=_assistant_system_prompt(next_state),
-        )
-        result = agent.invoke({"messages": [{"role": "user", "content": text}]})
-        answer = _final_answer(result.get("messages", []))
-        return AssistantChatResponse(answer=answer or "我已处理完成。", actions=actions, state=next_state)
+        try:
+            agent = create_agent(
+                model=build_model(),
+                tools=[
+                    search_gazetteer_files,
+                    download_gazetteer,
+                    get_download_status,
+                    create_or_open_knowledge_base,
+                ],
+                system_prompt=_assistant_system_prompt(next_state),
+            )
+            result = agent.invoke({"messages": [{"role": "user", "content": text}]})
+            answer = _final_answer(result.get("messages", [])) or "我已处理完成。"
+            session.add(ChatMessage(session_id=chat_session.id, role=ChatRole.ASSISTANT, content=answer, references=[]))
+            chat_run.status = ChatRunStatus.COMPLETED
+            chat_run.answer = answer
+            chat_run.references = []
+            chat_run.usage = _zero_usage()
+            chat_run.token_cost = {}
+            chat_run.cache_hit = False
+            chat_run.error_message = None
+            event_sequence += 1
+            _record_assistant_run_event(
+                session,
+                chat_run=chat_run,
+                event_type="complete",
+                sequence=event_sequence,
+                payload={
+                    "answer_preview": answer[:500],
+                    "action_count": len(actions),
+                    "state": next_state,
+                },
+            )
+            session.commit()
+            return AssistantChatResponse(
+                answer=answer,
+                actions=actions,
+                state=next_state,
+                session_id=chat_session.id,
+                run_id=chat_run.id,
+            )
+        except Exception as exc:
+            chat_run.status = ChatRunStatus.FAILED
+            chat_run.error_message = str(exc)
+            event_sequence += 1
+            _record_assistant_run_event(
+                session,
+                chat_run=chat_run,
+                event_type="error",
+                sequence=event_sequence,
+                payload={"message": str(exc), "state": next_state},
+            )
+            session.commit()
+            raise
 
     def _search(self, session: Session, *, text: str, state: dict[str, Any]) -> AssistantChatResponse:
         query = _search_query(text)
@@ -289,6 +368,83 @@ def _final_answer(messages: list[Any]) -> str:
                 return "\n".join(str(item.get("text", item)) if isinstance(item, dict) else str(item) for item in content)
             return str(content).strip()
     return ""
+
+
+def _get_or_create_assistant_session(
+    session: Session,
+    *,
+    user_id: int,
+    session_id: int | None,
+    question: str,
+) -> ChatSession:
+    if session_id is not None:
+        chat_session = session.get(ChatSession, session_id)
+        if chat_session is not None and chat_session.user_id == user_id and chat_session.kb_id is None:
+            return chat_session
+    title = question.strip()[:60] or "智能助手会话"
+    chat_session = ChatSession(user_id=user_id, kb_id=None, title=title)
+    session.add(chat_session)
+    session.commit()
+    session.refresh(chat_session)
+    return chat_session
+
+
+def _create_assistant_run(session: Session, *, user_id: int, chat_session_id: int, question: str) -> ChatRun:
+    chat_run = ChatRun(
+        session_id=chat_session_id,
+        user_id=user_id,
+        kb_id=None,
+        prompt_version_id=None,
+        status=ChatRunStatus.RUNNING,
+        question=question,
+        references=[],
+        usage={},
+        token_cost={},
+        cache_hit=False,
+    )
+    session.add(chat_run)
+    session.commit()
+    session.refresh(chat_run)
+    return chat_run
+
+
+def _record_assistant_run_event(
+    session: Session,
+    *,
+    chat_run: ChatRun,
+    event_type: str,
+    sequence: int,
+    payload: dict[str, Any],
+) -> None:
+    session.add(
+        ChatRunEvent(
+            run_id=chat_run.id,
+            user_id=chat_run.user_id,
+            kb_id=None,
+            event_type=event_type,
+            sequence=sequence,
+            payload=payload,
+        )
+    )
+
+
+def _latest_assistant_state(session: Session, *, chat_session_id: int) -> dict[str, Any]:
+    statement = (
+        select(ChatRunEvent)
+        .join(ChatRun, ChatRunEvent.run_id == ChatRun.id)
+        .where(ChatRun.session_id == chat_session_id, ChatRunEvent.event_type == "complete")
+        .order_by(ChatRunEvent.created_at.desc(), ChatRunEvent.id.desc())
+        .limit(1)
+    )
+    event = session.scalar(statement)
+    if event is None:
+        return {}
+    state = event.payload.get("state") if isinstance(event.payload, dict) else None
+    return dict(state) if isinstance(state, dict) else {}
+
+
+def _zero_usage() -> dict[str, Any]:
+    return {"input_tokens": 0, "output_tokens": 0, "total_tokens": 0, "cached": False}
 
 
 def get_assistant_service() -> AssistantService:

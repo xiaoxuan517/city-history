@@ -51,7 +51,7 @@ class ChatAnswerResponse(BaseModel):
 class ChatSessionRead(BaseModel):
     id: int
     user_id: int
-    kb_id: int
+    kb_id: int | None
     title: str | None
     created_at: datetime
     updated_at: datetime
@@ -75,7 +75,7 @@ class ChatRunRead(BaseModel):
     id: int
     session_id: int
     user_id: int
-    kb_id: int
+    kb_id: int | None
     prompt_version_id: int | None
     status: ChatRunStatus
     question: str
@@ -97,7 +97,7 @@ class ChatRunEventRead(BaseModel):
     id: int
     run_id: int
     user_id: int
-    kb_id: int
+    kb_id: int | None
     event_type: str
     sequence: int
     payload: dict[str, Any]

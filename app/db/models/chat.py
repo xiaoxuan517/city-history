@@ -28,10 +28,10 @@ class ChatSession(TimestampMixin, Base):
 
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True, nullable=False)
-    kb_id: Mapped[int] = mapped_column(
+    kb_id: Mapped[int | None] = mapped_column(
         ForeignKey("knowledge_bases.id", ondelete="CASCADE"),
         index=True,
-        nullable=False,
+        nullable=True,
     )
     title: Mapped[str | None] = mapped_column(String(255), nullable=True)
 
@@ -70,10 +70,10 @@ class ChatRun(TimestampMixin, Base):
         nullable=False,
     )
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True, nullable=False)
-    kb_id: Mapped[int] = mapped_column(
+    kb_id: Mapped[int | None] = mapped_column(
         ForeignKey("knowledge_bases.id", ondelete="CASCADE"),
         index=True,
-        nullable=False,
+        nullable=True,
     )
     prompt_version_id: Mapped[int | None] = mapped_column(
         ForeignKey("prompt_versions.id", ondelete="SET NULL"),
@@ -109,10 +109,10 @@ class ChatRunEvent(TimestampMixin, Base):
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
     run_id: Mapped[int] = mapped_column(ForeignKey("chat_runs.id", ondelete="CASCADE"), index=True, nullable=False)
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True, nullable=False)
-    kb_id: Mapped[int] = mapped_column(
+    kb_id: Mapped[int | None] = mapped_column(
         ForeignKey("knowledge_bases.id", ondelete="CASCADE"),
         index=True,
-        nullable=False,
+        nullable=True,
     )
     event_type: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
     sequence: Mapped[int] = mapped_column(Integer, nullable=False)

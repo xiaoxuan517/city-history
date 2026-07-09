@@ -71,6 +71,8 @@ export type AssistantChatResponse = {
   answer: string;
   actions: AssistantAction[];
   state: Record<string, unknown>;
+  session_id: number | null;
+  run_id: number | null;
 };
 
 export type SearchType = "similarity" | "mmr" | "hybrid";
@@ -105,7 +107,7 @@ export type ChatResponse = {
 export type ChatSession = {
   id: number;
   user_id: number;
-  kb_id: number;
+  kb_id: number | null;
   title: string | null;
   created_at: string;
   updated_at: string;
@@ -125,7 +127,7 @@ export type ChatRun = {
   id: number;
   session_id: number;
   user_id: number;
-  kb_id: number;
+  kb_id: number | null;
   prompt_version_id: number | null;
   status: "running" | "completed" | "failed" | "cancelled";
   question: string;
@@ -145,7 +147,7 @@ export type ChatRunEvent = {
   id: number;
   run_id: number;
   user_id: number;
-  kb_id: number;
+  kb_id: number | null;
   event_type: string;
   sequence: number;
   payload: Record<string, unknown>;

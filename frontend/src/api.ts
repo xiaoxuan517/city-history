@@ -237,11 +237,11 @@ export async function deleteChatSession(token: string, sessionId: number): Promi
 
 export async function chatWithAssistant(
   token: string,
-  payload: { message: string; state?: Record<string, unknown> },
+  payload: { message: string; state?: Record<string, unknown>; session_id?: number },
 ): Promise<AssistantChatResponse> {
   const response = await postJson(
     "/api/v1/assistant/chat",
-    { message: payload.message, state: payload.state ?? {} },
+    { message: payload.message, state: payload.state ?? {}, session_id: payload.session_id },
     token,
   );
   return response.json();
