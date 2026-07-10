@@ -19,6 +19,8 @@ from PIL import Image, ImageOps
 from app.api.errors import ApiError
 from app.config.settings import settings
 from app.schemas.alist import (
+    AListFileGetRequest,
+    AListFileGetResponse,
     AListFileItem,
     AListFileListRequest,
     AListFileListResponse,
@@ -371,6 +373,27 @@ class AListService:
             json=payload.model_dump(),
         )
 
+    def _get_file_item(self, payload: AListFileGetRequest) -> AListFileItem | None:
+        try:
+            with self._build_client() as client:
+                response = self._post_with_auth(client, "/api/fs/get", json=payload.model_dump())
+        except httpx.HTTPError as exc:
+            raise ApiError(
+                status_code=502,
+                code="alist_request_failed",
+                message=f"Failed to request AList file info: {exc}",
+            ) from exc
+
+        try:
+            parsed_response = self._parse_response(response, AListFileGetResponse, code="alist_get_failed")
+        except ApiError as exc:
+            logger.warning("获取 AList 文件详情失败。path=%s error=%s", payload.path, exc.message)
+            return None
+
+        item = self._file_get_data_to_item(payload.path, parsed_response)
+        self._cache_file_item(payload.path, item)
+        return item
+
     def _post_with_auth(
         self,
         client: httpx.Client,
@@ -491,12 +514,40 @@ class AListService:
             _FILE_LIST_CACHE[self._file_list_cache_key(payload)] = (response, expires_at)
             self._index_file_metadata(payload, response)
 
+    def _cache_file_item(self, source_path: str, item: AListFileItem) -> None:
+        with _FILE_CACHE_LOCK:
+            _FILE_META_CACHE[source_path] = item
+            if item.path:
+                _FILE_META_CACHE[item.path] = item
+            if item.virtual_path:
+                _FILE_META_CACHE[item.virtual_path] = item
+
     def _index_file_metadata(self, payload: AListFileListRequest, response: AListFileListResponse) -> None:
         for item in response.data.content:
             full_path = self._full_file_path(payload.path, item)
             _FILE_META_CACHE[full_path] = item
             if item.path:
                 _FILE_META_CACHE[item.path] = item
+
+    @staticmethod
+    def _file_get_data_to_item(source_path: str, response: AListFileGetResponse) -> AListFileItem:
+        data = response.data
+        return AListFileItem(
+            id="",
+            path=source_path,
+            virtual_path=source_path,
+            name=data.name,
+            size=data.size,
+            is_dir=data.is_dir,
+            modified=data.modified,
+            created=data.created,
+            sign=data.sign,
+            thumb=data.thumb,
+            type=data.type,
+            hashinfo=data.hashinfo,
+            hash_info=data.hash_info,
+            label_list=None,
+        )
 
     @staticmethod
     def _file_list_cache_key(payload: AListFileListRequest) -> str:
@@ -539,6 +590,18 @@ class AListService:
             candidates.append(self._join_path(payload.list_path, payload.name))
 
         item = self._find_cached_file_item(candidates, payload.name)
+        if item is not None:
+            return item
+
+        item = self._get_file_item(
+            AListFileGetRequest(
+                path=source_path,
+                password="",
+                page=1,
+                per_page=0,
+                refresh=False,
+            )
+        )
         if item is not None:
             return item
 

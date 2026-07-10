@@ -58,6 +58,38 @@ class AListFileListResponse(BaseModel):
     data: AListFileListData
 
 
+class AListFileGetRequest(BaseModel):
+    path: str
+    password: str = ""
+    page: int = Field(default=1, ge=1)
+    per_page: int = Field(default=0, ge=0)
+    refresh: bool = False
+
+
+class AListFileGetData(BaseModel):
+    name: str
+    size: int
+    is_dir: bool
+    modified: str
+    created: str
+    sign: str = ""
+    thumb: str = ""
+    type: int
+    hashinfo: str = ""
+    hash_info: AListHashInfo | None = None
+    raw_url: str | None = None
+    readme: str = ""
+    header: str = ""
+    provider: str = ""
+    related: Any | None = None
+
+
+class AListFileGetResponse(BaseModel):
+    code: int
+    message: str
+    data: AListFileGetData
+
+
 class AListOfflineDownloadRequest(BaseModel):
     path: str = "downloads"
     urls: list[str] | None = None
