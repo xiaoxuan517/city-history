@@ -28,6 +28,8 @@ storage/exports/
 storage/uploads/
 storage/*.sqlite
 storage/*.sqlite3
+storage/*.sqlite-*
+storage/*.sqlite3-*
 storage/*.jsonl
 app/storage/
 downloads/*
