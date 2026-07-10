@@ -51,6 +51,7 @@ function AssistantPage({
   const [input, setInput] = useState("");
   const [pending, setPending] = useState(false);
   const [sessionPending, setSessionPending] = useState(false);
+  const [sessionsLoading, setSessionsLoading] = useState(false);
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -127,6 +128,7 @@ function AssistantPage({
 
   async function refreshSessions(preferredSessionId = activeSessionId) {
     if (!apiToken) return;
+    setSessionsLoading(true);
     try {
       const allSessions = await listChatSessions(apiToken);
       const assistantSessions = allSessions.filter((session) => session.kb_id === null);
@@ -136,6 +138,8 @@ function AssistantPage({
       }
     } catch (error) {
       setError(error instanceof Error ? error.message : "加载会话失败");
+    } finally {
+      setSessionsLoading(false);
     }
   }
 
@@ -218,7 +222,8 @@ function AssistantPage({
               </button>
             </div>
             <div className="assistant-session-list">
-              {sessions.map((session) => (
+              {sessionsLoading && <p className="assistant-session-loading">正在加载记录...</p>}
+              {!sessionsLoading && sessions.map((session) => (
                 <div className={`assistant-session-item ${activeSessionId === session.id ? "active" : ""}`} key={session.id}>
                   <button
                     className="assistant-session-select"
@@ -241,7 +246,7 @@ function AssistantPage({
                   </button>
                 </div>
               ))}
-              {!sessions.length && <p>还没有历史会话。</p>}
+              {!sessionsLoading && !sessions.length && <p>还没有历史会话。</p>}
             </div>
           </aside>
 

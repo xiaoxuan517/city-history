@@ -2168,6 +2168,22 @@ button {
   font-size: 13px;
 }
 
+.assistant-session-loading {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.assistant-session-loading::before {
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(29, 59, 47, 0.16);
+  border-top-color: #9a5b18;
+  border-radius: 999px;
+  content: "";
+  animation: spin 900ms linear infinite;
+}
+
 .assistant-session-item {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
