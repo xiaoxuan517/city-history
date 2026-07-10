@@ -3,10 +3,10 @@ from __future__ import annotations
 import json
 import mimetypes
 import re
-from typing import Any
+from typing import Any, Generator
 
 from langchain.agents import create_agent
-from langchain_core.messages import AIMessage
+from langchain_core.messages import AIMessage, ToolMessage
 from langchain_core.tools import tool
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -120,7 +120,20 @@ class AssistantService:
             )
             result = agent.invoke({"messages": [{"role": "user", "content": text}]})
             answer = _final_answer(result.get("messages", [])) or "我已处理完成。"
-            session.add(ChatMessage(session_id=chat_session.id, role=ChatRole.ASSISTANT, content=answer, references=[]))
+            if not actions:
+                fallback = self._fallback_tool_response(session, user_id=user_id, text=text, state=next_state)
+                if fallback is not None:
+                    actions.extend(fallback.actions)
+                    answer = fallback.answer
+                    record_tool_result("fallback_intent", fallback)
+            session.add(
+                ChatMessage(
+                    session_id=chat_session.id,
+                    role=ChatRole.ASSISTANT,
+                    content=answer,
+                    references=_action_references(actions),
+                )
+            )
             chat_run.status = ChatRunStatus.COMPLETED
             chat_run.answer = answer
             chat_run.references = []
@@ -161,6 +174,168 @@ class AssistantService:
             )
             session.commit()
             raise
+
+    def chat_stream(
+        self,
+        session: Session,
+        *,
+        user_id: int,
+        message: str,
+        state: dict[str, Any],
+        session_id: int | None = None,
+    ) -> Generator[tuple[str, dict[str, Any]], None, None]:
+        text = message.strip()
+        next_state = dict(state or {})
+        actions: list[AssistantAction] = []
+        chat_session = _get_or_create_assistant_session(session, user_id=user_id, session_id=session_id, question=text)
+        if not next_state:
+            next_state = _latest_assistant_state(session, chat_session_id=chat_session.id)
+        next_state.setdefault("assistant_session_id", chat_session.id)
+        session.add(ChatMessage(session_id=chat_session.id, role=ChatRole.USER, content=text, references=[]))
+        session.commit()
+        chat_run = _create_assistant_run(session, user_id=user_id, chat_session_id=chat_session.id, question=text)
+        yield "metadata", {"run_id": chat_run.id, "session_id": chat_session.id}
+
+        event_sequence = 0
+        answer = ""
+
+        def record_tool_result(tool_name: str, response: AssistantChatResponse) -> None:
+            nonlocal event_sequence
+            event_sequence += 1
+            _record_assistant_run_event(
+                session,
+                chat_run=chat_run,
+                event_type="tool_result",
+                sequence=event_sequence,
+                payload={
+                    "tool_name": tool_name,
+                    "answer": response.answer,
+                    "actions": [action.model_dump() for action in response.actions],
+                    "state": response.state,
+                },
+            )
+
+        @tool
+        def search_gazetteer_files(query: str) -> str:
+            """Search gazetteer files by place name, old place name, title, or path."""
+            response = self._search(session, text=query, state=next_state)
+            actions.extend(response.actions)
+            record_tool_result("search_gazetteer_files", response)
+            return _tool_payload(answer=response.answer, state=response.state, actions=response.actions)
+
+        @tool
+        def download_gazetteer(index: int = 1) -> str:
+            """Create a download task for one gazetteer from the latest search result list. Index starts from 1."""
+            response = self._download_selected(session, text=f"下载第 {index} 本", state=next_state)
+            actions.extend(response.actions)
+            record_tool_result("download_gazetteer", response)
+            return _tool_payload(answer=response.answer, state=response.state, actions=response.actions)
+
+        @tool
+        def get_download_status() -> str:
+            """Get current download task status and progress for the selected gazetteer."""
+            response = self._download_status(next_state)
+            actions.extend(response.actions)
+            record_tool_result("get_download_status", response)
+            return _tool_payload(answer=response.answer, state=response.state, actions=response.actions)
+
+        @tool
+        def create_or_open_knowledge_base() -> str:
+            """Create a knowledge base from the selected downloaded gazetteer, or open existing same-name knowledge base."""
+            response = self._create_or_open_kb(session, user_id=user_id, state=next_state)
+            actions.extend(response.actions)
+            record_tool_result("create_or_open_knowledge_base", response)
+            return _tool_payload(answer=response.answer, state=response.state, actions=response.actions)
+
+        try:
+            agent = create_agent(
+                model=build_model(),
+                tools=[
+                    search_gazetteer_files,
+                    download_gazetteer,
+                    get_download_status,
+                    create_or_open_knowledge_base,
+                ],
+                system_prompt=_assistant_system_prompt(next_state),
+            )
+            for mode, chunk in agent.stream(
+                {"messages": [{"role": "user", "content": text}]},
+                stream_mode=["messages", "updates", "values"],
+            ):
+                if mode == "messages":
+                    message_chunk, metadata = chunk
+                    if metadata.get("langgraph_node") != "model":
+                        continue
+                    delta = _message_content(getattr(message_chunk, "content", ""))
+                    if not delta:
+                        continue
+                    answer += delta
+                    yield "answer_delta", {"content": delta, "answer": answer}
+                    continue
+
+                if mode == "updates":
+                    for node_data in chunk.values():
+                        for update_message in node_data.get("messages", []):
+                            if isinstance(update_message, ToolMessage):
+                                tool_payload = _parse_tool_payload(_message_content(update_message.content))
+                                if tool_payload:
+                                    yield "tool_result", tool_payload
+                    continue
+
+            answer = answer.strip() or "我已处理完成。"
+            if not actions:
+                fallback = self._fallback_tool_response(session, user_id=user_id, text=text, state=next_state)
+                if fallback is not None:
+                    actions.extend(fallback.actions)
+                    answer = fallback.answer
+                    record_tool_result("fallback_intent", fallback)
+                    yield "answer_delta", {"content": answer, "answer": answer}
+            session.add(
+                ChatMessage(
+                    session_id=chat_session.id,
+                    role=ChatRole.ASSISTANT,
+                    content=answer,
+                    references=_action_references(actions),
+                )
+            )
+            chat_run.status = ChatRunStatus.COMPLETED
+            chat_run.answer = answer
+            chat_run.references = []
+            chat_run.usage = _zero_usage()
+            chat_run.token_cost = {}
+            chat_run.cache_hit = False
+            chat_run.error_message = None
+            event_sequence += 1
+            _record_assistant_run_event(
+                session,
+                chat_run=chat_run,
+                event_type="complete",
+                sequence=event_sequence,
+                payload={"answer_preview": answer[:500], "action_count": len(actions), "state": next_state},
+            )
+            session.commit()
+            yield "complete", {
+                "answer": answer,
+                "actions": [action.model_dump() for action in actions],
+                "state": next_state,
+                "session_id": chat_session.id,
+                "run_id": chat_run.id,
+            }
+            yield "end", {}
+        except Exception as exc:
+            chat_run.status = ChatRunStatus.FAILED
+            chat_run.error_message = str(exc)
+            event_sequence += 1
+            _record_assistant_run_event(
+                session,
+                chat_run=chat_run,
+                event_type="error",
+                sequence=event_sequence,
+                payload={"message": str(exc), "state": next_state},
+            )
+            session.commit()
+            yield "error", {"message": str(exc)}
+            yield "end", {}
 
     def _search(self, session: Session, *, text: str, state: dict[str, Any]) -> AssistantChatResponse:
         query = _search_query(text)
@@ -263,6 +438,24 @@ class AssistantService:
         )
         return AssistantChatResponse(answer=f"已创建知识库“{kb.name}”，并加入文档“{document.filename}”。", actions=[action], state=state)
 
+    def _fallback_tool_response(
+        self,
+        session: Session,
+        *,
+        user_id: int,
+        text: str,
+        state: dict[str, Any],
+    ) -> AssistantChatResponse | None:
+        if self._is_status_intent(text):
+            return self._download_status(state)
+        if self._is_create_kb_intent(text):
+            return self._create_or_open_kb(session, user_id=user_id, state=state)
+        if self._is_download_intent(text):
+            return self._download_selected(session, text=text, state=state)
+        if self._is_search_intent(text):
+            return self._search(session, text=text, state=state)
+        return None
+
     @staticmethod
     def _is_download_intent(text: str) -> bool:
         return "下载" in text
@@ -274,6 +467,14 @@ class AssistantService:
     @staticmethod
     def _is_create_kb_intent(text: str) -> bool:
         return any(word in text for word in ["创建知识库", "加入知识库", "建立知识库", "打开知识库"])
+
+    @staticmethod
+    def _is_search_intent(text: str) -> bool:
+        if any(word in text for word in ["查询", "查找", "搜索", "检索", "找一", "找下", "帮我找"]):
+            return True
+        if any(word in text for word in ["是什么", "什么是", "你是谁", "能做什么", "介绍"]):
+            return False
+        return bool(re.fullmatch(r"[\u4e00-\u9fffA-Za-z0-9（）()《》·._ -]{1,30}(县志|方志|府志|州志|厅志)", text.strip()))
 
 
 def _gazetteer_payload(row: GazetteerFile, alist_service: AListService) -> dict[str, Any]:
@@ -356,6 +557,34 @@ def _tool_payload(
         ensure_ascii=False,
         default=str,
     )
+
+
+def _message_content(content: Any) -> str:
+    if isinstance(content, str):
+        return content
+    if isinstance(content, list):
+        parts = []
+        for item in content:
+            if isinstance(item, dict):
+                parts.append(str(item.get("text") or item.get("content") or ""))
+            else:
+                parts.append(str(item))
+        return "".join(parts)
+    return str(content)
+
+
+def _parse_tool_payload(content: str) -> dict[str, Any]:
+    try:
+        payload = json.loads(content)
+    except json.JSONDecodeError:
+        return {"content": content}
+    if not isinstance(payload, dict):
+        return {"content": content}
+    return payload
+
+
+def _action_references(actions: list[AssistantAction]) -> list[dict[str, Any]]:
+    return [{"type": "assistant_action", "action": action.model_dump()} for action in actions]
 
 
 def _final_answer(messages: list[Any]) -> str:

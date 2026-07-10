@@ -1,7 +1,7 @@
 import { FormEvent, useEffect, useState } from "react";
 import { Bot, BookOpen, Download, MessageSquare, Plus, Send, Trash2 } from "lucide-react";
 
-import { chatWithAssistant, deleteChatSession, listChatMessages, listChatSessions } from "../api";
+import { deleteChatSession, listChatMessages, listChatSessions, streamAssistantChat } from "../api";
 import type { AssistantAction, ChatSession, StoredChatMessage } from "../types";
 import SiteNav from "./SiteNav";
 
@@ -70,31 +70,56 @@ function AssistantPage({
     setInput("");
     setPending(true);
     setError("");
-    setMessages((current) => [...current, { id: createMessageId(), role: "user", content: text }]);
+    const assistantId = createMessageId();
+    setMessages((current) => [
+      ...current,
+      { id: createMessageId(), role: "user", content: text },
+      { id: assistantId, role: "assistant", content: "正在生成..." },
+    ]);
+    let finalSessionId = activeSessionId;
+    let finalAnswer = "";
     try {
-      const response = await chatWithAssistant(apiToken, { message: text, state, session_id: activeSessionId });
-      setState(isRecord(response.state) ? response.state : {});
-      if (response.session_id) setActiveSessionId(response.session_id);
-      setMessages((current) => [
-        ...current,
-        {
-          id: createMessageId(),
-          role: "assistant",
-          content: typeof response.answer === "string" ? response.answer : "智能助手已返回结果。",
-          actions: Array.isArray(response.actions) ? response.actions : [],
+      await streamAssistantChat({
+        token: apiToken,
+        message: text,
+        state,
+        sessionId: activeSessionId,
+        onEvent: (eventData) => {
+          if (eventData.eventName === "metadata") {
+            finalSessionId = eventData.data.session_id;
+            setActiveSessionId(eventData.data.session_id);
+            return;
+          }
+          if (eventData.eventName === "answer_delta") {
+            const nextAnswer = eventData.data.answer || eventData.data.content || "";
+            finalAnswer = nextAnswer;
+            updateMessage(assistantId, { content: nextAnswer || "正在生成..." });
+            return;
+          }
+          if (eventData.eventName === "complete") {
+            const response = eventData.data;
+            finalAnswer = typeof response.answer === "string" ? response.answer : finalAnswer;
+            finalSessionId = response.session_id ?? finalSessionId;
+            setState(isRecord(response.state) ? response.state : {});
+            if (response.session_id) setActiveSessionId(response.session_id);
+            updateMessage(assistantId, {
+              content: finalAnswer || "智能助手已返回结果。",
+              actions: Array.isArray(response.actions) ? response.actions : [],
+            });
+            return;
+          }
+          if (eventData.eventName === "error") {
+            throw new Error(eventData.data.message || "智能助手请求失败");
+          }
         },
-      ]);
-      await refreshSessions(response.session_id ?? activeSessionId);
+      });
+      if (!finalAnswer) updateMessage(assistantId, { content: "没有收到回答。" });
+      await refreshSessions(finalSessionId);
     } catch (error) {
-      setMessages((current) => [
-        ...current,
-        {
-          id: createMessageId(),
-          role: "assistant",
-          content: error instanceof Error ? error.message : "智能助手请求失败",
-          error: true,
-        },
-      ]);
+      updateMessage(assistantId, {
+        content: error instanceof Error ? error.message : "智能助手请求失败",
+        error: true,
+      });
     } finally {
       setPending(false);
     }
@@ -152,6 +177,10 @@ function AssistantPage({
     setState({});
     setInput("");
     setMessages([welcomeAssistantMessage()]);
+  }
+
+  function updateMessage(id: string, patch: Partial<AssistantMessage>) {
+    setMessages((current) => current.map((message) => (message.id === id ? { ...message, ...patch } : message)));
   }
 
   return (
@@ -323,6 +352,7 @@ function toAssistantMessage(message: StoredChatMessage): AssistantMessage {
     id: `stored-${message.id}`,
     role: message.role === "assistant" ? "assistant" : "user",
     content: message.content,
+    actions: extractStoredAssistantActions(message),
   };
 }
 
@@ -340,6 +370,16 @@ function createMessageId() {
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function extractStoredAssistantActions(message: StoredChatMessage): AssistantAction[] {
+  if (message.role !== "assistant") return [];
+  return message.references
+    .map((reference) => {
+      const item = isRecord(reference) ? (reference as Record<string, unknown>) : {};
+      return isRecord(item.action) ? item.action : null;
+    })
+    .filter((action): action is AssistantAction => isRecord(action) && typeof action.type === "string");
 }
 
 export default AssistantPage;

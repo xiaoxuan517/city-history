@@ -75,6 +75,32 @@ export type AssistantChatResponse = {
   run_id: number | null;
 };
 
+export type AssistantStreamEvent =
+  | {
+      eventName: "metadata";
+      data: { run_id: number; session_id: number };
+    }
+  | {
+      eventName: "answer_delta";
+      data: { content?: string; answer?: string };
+    }
+  | {
+      eventName: "tool_result";
+      data: Record<string, unknown>;
+    }
+  | {
+      eventName: "complete";
+      data: AssistantChatResponse;
+    }
+  | {
+      eventName: "end";
+      data: Record<string, never>;
+    }
+  | {
+      eventName: "error";
+      data: { message?: string };
+    };
+
 export type SearchType = "similarity" | "mmr" | "hybrid";
 
 export type RetrievalProfile = {

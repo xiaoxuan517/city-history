@@ -2,6 +2,7 @@ import type {
   KnowledgeBase,
   KnowledgeBaseWithDocumentResponse,
   AssistantChatResponse,
+  AssistantStreamEvent,
   AListFileListResponse,
   AListOfflineDownloadResponse,
   AListTaskListResponse,
@@ -245,6 +246,39 @@ export async function chatWithAssistant(
     token,
   );
   return response.json();
+}
+
+export async function streamAssistantChat({
+  message,
+  state,
+  sessionId,
+  token,
+  onEvent,
+}: {
+  message: string;
+  state?: Record<string, unknown>;
+  sessionId?: number;
+  token: string;
+  onEvent: (event: AssistantStreamEvent) => void;
+}) {
+  const response = await postJson(
+    "/api/v1/assistant/chat/stream",
+    { message, state: state ?? {}, session_id: sessionId },
+    token,
+  );
+
+  const reader = response.body?.getReader();
+  if (!reader) throw new Error("当前浏览器不支持流式响应");
+
+  const decoder = new TextDecoder();
+  let buffer = "";
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    buffer += decoder.decode(value, { stream: true });
+    buffer = parseSse(buffer, (event) => onEvent(event as AssistantStreamEvent));
+  }
 }
 
 export async function listAListFiles(payload: {
