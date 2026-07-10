@@ -1,0 +1,29 @@
+services:
+  api:
+    build:
+      context: .
+    command: >
+      sh -c "uv run alembic upgrade head &&
+      uv run python -m app.main web --host 0.0.0.0 --port 8000"
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./.env:/app/.env:ro
+      - ./app_storage:/app/storage
+      - ./app_logs:/app/logs
+      - ./downloads:/app/downloads
+      - ./picture:/app/picture
+      - ./preview:/app/preview
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "uv",
+          "run",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/api/v1/health', timeout=5).read()",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
