@@ -290,7 +290,7 @@ function AssistantPage({
   );
 }
 
-function AssistantActionView({
+export function AssistantActionView({
   action,
   onOpenKnowledgeBase,
 }: {

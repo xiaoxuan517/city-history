@@ -88,7 +88,14 @@ function KnowledgeBaseListPage({
       </section>
 
       <section className="kb-card-grid" aria-label="知识库">
-        {knowledgeBases.map((kb) => {
+        {pending && (
+          <div className="kb-list-loading">
+            <span />
+            正在加载知识库...
+          </div>
+        )}
+
+        {!pending && knowledgeBases.map((kb) => {
           const isDefaultKb = kb.name === "默认知识库";
           return (
             <article className={`kb-list-card ${isDefaultKb ? "locked" : ""}`} key={kb.id}>
@@ -124,7 +131,7 @@ function KnowledgeBaseListPage({
           );
         })}
 
-        {!knowledgeBases.length && (
+        {!pending && !knowledgeBases.length && (
           <div className="kb-empty-state">
             <LibraryBig size={32} />
             <h2>还没有知识库</h2>

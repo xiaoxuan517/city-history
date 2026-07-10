@@ -1,4 +1,4 @@
-import { FormEvent, useEffect, useRef, useState } from "react";
+import { FormEvent, ReactNode, useEffect, useRef, useState } from "react";
 
 import {
   cancelChatRun,
@@ -28,6 +28,7 @@ import AuthPanel from "./components/AuthPanel";
 import ChatPanel from "./components/ChatPanel";
 import DocumentPanel from "./components/DocumentPanel";
 import FavoritesPage from "./components/FavoritesPage";
+import FloatingAssistant from "./components/FloatingAssistant";
 import GazetteerPage from "./components/GazetteerPage";
 import HistoryAlbumPage from "./components/HistoryAlbumPage";
 import HomePage from "./components/HomePage";
@@ -115,6 +116,7 @@ function App() {
   const [workspaceError, setWorkspaceError] = useState("");
   const [authNotice, setAuthNotice] = useState(() => loadAuthNotice());
   const [workspacePending, setWorkspacePending] = useState(false);
+  const [sessionLoading, setSessionLoading] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([welcomeMessage]);
   const [input, setInput] = useState("");
   const [pending, setPending] = useState(false);
@@ -169,7 +171,7 @@ function App() {
       return;
     }
     void refreshDocuments();
-    void refreshChatSessions();
+    void refreshChatSessions({ loadLatest: true });
   }, [apiToken, activeKbId]);
 
   useEffect(() => {
@@ -289,6 +291,7 @@ function App() {
   }
 
   function openKnowledgeBase(kbId: number) {
+    const shouldLoadLatestNow = kbId === activeKbId;
     setActiveKbId(kbId);
     setSessionId(undefined);
     setMessages([welcomeMessage]);
@@ -297,6 +300,9 @@ function App() {
       window.history.pushState(null, "", nextPath);
     }
     setView("workspace");
+    if (shouldLoadLatestNow) {
+      void refreshChatSessions({ kbId, loadLatest: true });
+    }
   }
 
   async function resetThread() {
@@ -384,13 +390,29 @@ function App() {
     }
   }
 
-  async function refreshChatSessions() {
-    if (!apiToken || !activeKbId) return;
+  async function refreshChatSessions(options: { kbId?: number; loadLatest?: boolean } = {}) {
+    const targetKbId = options.kbId ?? activeKbId;
+    if (!apiToken || !targetKbId) return;
+    if (options.loadLatest) setSessionLoading(true);
     try {
       const sessions = await listChatSessions(apiToken);
-      setChatSessions(sessions.filter((item) => item.kb_id === activeKbId));
+      const kbSessions = sessions.filter((item) => item.kb_id === targetKbId);
+      setChatSessions(kbSessions);
+      if (options.loadLatest) {
+        const latestSession = kbSessions[0];
+        if (latestSession) {
+          const storedMessages = await listChatMessages(apiToken, latestSession.id);
+          setSessionId(latestSession.id);
+          setMessages(storedMessages.length ? storedMessages.map(toChatMessage) : [welcomeMessage]);
+        } else {
+          setSessionId(undefined);
+          setMessages([welcomeMessage]);
+        }
+      }
     } catch (error) {
       setWorkspaceError(error instanceof Error ? error.message : "加载会话失败");
+    } finally {
+      if (options.loadLatest) setSessionLoading(false);
     }
   }
 
@@ -744,9 +766,20 @@ function App() {
   }
 
   const activeKb = knowledgeBases.find((kb) => kb.id === activeKbId) || null;
+  const withFloatingAssistant = (content: ReactNode) => (
+    <>
+      {content}
+      <FloatingAssistant
+        apiToken={apiToken}
+        isAuthenticated={Boolean(apiToken && currentUser)}
+        onLogin={() => navigateTo("auth")}
+        onOpenKnowledgeBase={openKnowledgeBase}
+      />
+    </>
+  );
 
   if (view === "home") {
-    return (
+    return withFloatingAssistant(
       <HomePage
         apiStatus={apiStatus}
         isAuthenticated={Boolean(apiToken && currentUser)}
@@ -758,12 +791,12 @@ function App() {
         onEnterFavorites={() => navigateTo("favorites")}
         onLogin={() => navigateTo("auth")}
         onLogout={logout}
-      />
+      />,
     );
   }
 
   if (view === "gazetteers") {
-    return (
+    return withFloatingAssistant(
       <GazetteerPage
         apiStatus={apiStatus}
         isAuthenticated={Boolean(apiToken && currentUser)}
@@ -777,12 +810,12 @@ function App() {
         onLogin={() => navigateTo("auth")}
         onLogout={logout}
         onOpenKnowledgeBase={openKnowledgeBase}
-      />
+      />,
     );
   }
 
   if (view === "historyAlbum") {
-    return (
+    return withFloatingAssistant(
       <HistoryAlbumPage
         apiStatus={apiStatus}
         isAuthenticated={Boolean(apiToken && currentUser)}
@@ -794,12 +827,12 @@ function App() {
         onFavorites={() => navigateTo("favorites")}
         onLogin={() => navigateTo("auth")}
         onLogout={logout}
-      />
+      />,
     );
   }
 
   if (view === "favorites") {
-    return (
+    return withFloatingAssistant(
       <FavoritesPage
         apiStatus={apiStatus}
         isAuthenticated={Boolean(apiToken && currentUser)}
@@ -813,7 +846,7 @@ function App() {
         onLogin={() => navigateTo("auth")}
         onLogout={logout}
         onOpenKnowledgeBase={openKnowledgeBase}
-      />
+      />,
     );
   }
 
@@ -841,7 +874,7 @@ function App() {
   }
 
   if (view === "kbList") {
-    return (
+    return withFloatingAssistant(
       <KnowledgeBaseListPage
         apiStatus={apiStatus}
         isAuthenticated={Boolean(apiToken && currentUser)}
@@ -858,11 +891,11 @@ function App() {
         onLogout={logout}
         onDeleteKnowledgeBase={deleteKb}
         onOpenKnowledgeBase={openKnowledgeBase}
-      />
+      />,
     );
   }
 
-  return (
+  return withFloatingAssistant(
     <main className="heritage-home workspace-page">
       <SiteNav
         active="knowledgeBase"
@@ -926,6 +959,7 @@ function App() {
           messages={messages}
           messagesEndRef={messagesEndRef}
           pending={pending}
+          sessionLoading={sessionLoading}
           activeRunId={activeRunId}
           onClear={clearMessages}
           onCancelRun={cancelActiveRun}
@@ -935,7 +969,7 @@ function App() {
           onSubmit={submitMessage}
         />
       </section>
-    </main>
+    </main>,
   );
 }
 

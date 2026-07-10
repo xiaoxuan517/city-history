@@ -10,6 +10,7 @@ type ChatPanelProps = {
   messages: ChatMessage[];
   messagesEndRef: RefObject<HTMLDivElement | null>;
   pending: boolean;
+  sessionLoading?: boolean;
   activeRunId: number | null;
   onClear: () => void;
   onCancelRun: () => void;
@@ -25,6 +26,7 @@ function ChatPanel({
   messages,
   messagesEndRef,
   pending,
+  sessionLoading = false,
   activeRunId,
   onClear,
   onCancelRun,
@@ -49,9 +51,16 @@ function ChatPanel({
       {header && <div className="workspace-strip">{header}</div>}
 
       <div className="messages" aria-live="polite">
-        {messages.map((message) => (
-          <MessageBubble key={message.id} message={message} onFeedback={onFeedback} />
-        ))}
+        {sessionLoading ? (
+          <div className="chat-session-loading">
+            <span />
+            正在加载会话...
+          </div>
+        ) : (
+          messages.map((message) => (
+            <MessageBubble key={message.id} message={message} onFeedback={onFeedback} />
+          ))
+        )}
         <div ref={messagesEndRef} />
       </div>
 
