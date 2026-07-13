@@ -24,6 +24,8 @@
 
 ![img_1.png](img_1.png)
 
+![img_2.png](img_2.png)
+
 ## 快速开始
 
 完整项目一键启动（PostgreSQL / Redis / FastAPI / Celery worker / React 前端静态资源）:
