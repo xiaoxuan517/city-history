@@ -16,6 +16,14 @@
 - 会话管理：聊天会话、消息、chat run、usage、操作日志、取消运行。
 - 质量评测：pgvector retrieval / answer eval、baseline manifest、bad case 导出。
 
+
+## 功能预览
+
+![img.png](img.png)
+
+
+![img_1.png](img_1.png)
+
 ## 快速开始
 
 完整项目一键启动（PostgreSQL / Redis / FastAPI / Celery worker / React 前端静态资源）:
@@ -143,18 +151,3 @@ scripts/        smoke 脚本
 tests/          单元测试与 API 测试
 docs/           架构、运行、规划、待办
 ```
-
-## 文档导航
-
-- AI 助手上下文入口: [docs/ai-context.md](docs/ai-context.md)
-- 架构说明: [docs/architecture.md](docs/architecture.md)
-- 目标架构与收口计划: [docs/target-architecture.md](docs/target-architecture.md)
-- RAG runtime 适配规格: [RAG_RUNTIME_SPEC.md](RAG_RUNTIME_SPEC.md)
-- 开发与运行约定: [docs/development.md](docs/development.md)
-- 多租户知识库 RAG 规划: [docs/multitenant-rag.md](docs/multitenant-rag.md)
-- 入库策略: [docs/ingestion.md](docs/ingestion.md)
-- 质量评测闭环: [docs/evaluation.md](docs/evaluation.md)
-- 项目现状: [docs/project-status.md](docs/project-status.md)
-- 路线图: [docs/roadmap.md](docs/roadmap.md)
-- 待办清单: [docs/todo.md](docs/todo.md)
-- 已完成清单归档: [docs/todo-done.md](docs/todo-done.md)
