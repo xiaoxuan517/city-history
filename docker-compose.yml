@@ -25,6 +25,19 @@ services:
       timeout: 5s
       retries: 10
 
+  alist:
+    image: xhofe/alist:latest
+    ports:
+      - "5244:5244"
+    volumes:
+      - alist_data:/opt/alist/data
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1:5244/ || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 10s
+
   api:
     build:
       context: .
@@ -55,6 +68,16 @@ services:
       LANGSMITH_ENDPOINT: ${LANGSMITH_ENDPOINT:-}
       TOKEN_INPUT_COST_PER_1K: ${TOKEN_INPUT_COST_PER_1K:-0}
       TOKEN_OUTPUT_COST_PER_1K: ${TOKEN_OUTPUT_COST_PER_1K:-0}
+      ALIST_BASE_URL: ${ALIST_BASE_URL:-http://alist:5244}
+      ALIST_USERNAME: ${ALIST_USERNAME:-}
+      ALIST_PASSWORD: ${ALIST_PASSWORD:-}
+      ALIST_CLIENT_ID: ${ALIST_CLIENT_ID:-rag-langchain-backend}
+      GAZETTEER_FILE_SYNC_ENABLED: ${GAZETTEER_FILE_SYNC_ENABLED:-true}
+      GAZETTEER_FILE_SYNC_INTERVAL_SECONDS: ${GAZETTEER_FILE_SYNC_INTERVAL_SECONDS:-21600}
+      GAZETTEER_FILE_ROOT_PATH: ${GAZETTEER_FILE_ROOT_PATH:-/百度网盘/全国地方县志古籍收藏}
+      OLD_PICTURE_SYNC_ENABLED: ${OLD_PICTURE_SYNC_ENABLED:-true}
+      OLD_PICTURE_SYNC_INTERVAL_SECONDS: ${OLD_PICTURE_SYNC_INTERVAL_SECONDS:-21600}
+      OLD_PICTURE_ROOT_PATH: ${OLD_PICTURE_ROOT_PATH:-/夸克/一万张历史老照片}
       LOG_DIR: /app/logs
       LOG_LEVEL: ${LOG_LEVEL:-INFO}
       LOG_FILE_NAME: ${LOG_FILE_NAME:-app.log}
@@ -81,6 +104,8 @@ services:
       postgres:
         condition: service_healthy
       redis:
+        condition: service_healthy
+      alist:
         condition: service_healthy
     healthcheck:
       test:
@@ -126,6 +151,16 @@ services:
       LANGSMITH_ENDPOINT: ${LANGSMITH_ENDPOINT:-}
       TOKEN_INPUT_COST_PER_1K: ${TOKEN_INPUT_COST_PER_1K:-0}
       TOKEN_OUTPUT_COST_PER_1K: ${TOKEN_OUTPUT_COST_PER_1K:-0}
+      ALIST_BASE_URL: ${ALIST_BASE_URL:-http://alist:5244}
+      ALIST_USERNAME: ${ALIST_USERNAME:-}
+      ALIST_PASSWORD: ${ALIST_PASSWORD:-}
+      ALIST_CLIENT_ID: ${ALIST_CLIENT_ID:-rag-langchain-backend}
+      GAZETTEER_FILE_SYNC_ENABLED: ${GAZETTEER_FILE_SYNC_ENABLED:-true}
+      GAZETTEER_FILE_SYNC_INTERVAL_SECONDS: ${GAZETTEER_FILE_SYNC_INTERVAL_SECONDS:-21600}
+      GAZETTEER_FILE_ROOT_PATH: ${GAZETTEER_FILE_ROOT_PATH:-/百度网盘/全国地方县志古籍收藏}
+      OLD_PICTURE_SYNC_ENABLED: ${OLD_PICTURE_SYNC_ENABLED:-true}
+      OLD_PICTURE_SYNC_INTERVAL_SECONDS: ${OLD_PICTURE_SYNC_INTERVAL_SECONDS:-21600}
+      OLD_PICTURE_ROOT_PATH: ${OLD_PICTURE_ROOT_PATH:-/夸克/一万张历史老照片}
       LOG_DIR: /app/logs
       LOG_LEVEL: ${LOG_LEVEL:-INFO}
       LOG_FILE_NAME: ${LOG_FILE_NAME:-worker.log}
@@ -149,8 +184,11 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+      alist:
+        condition: service_healthy
 
 volumes:
   postgres_data:
   app_storage:
   app_logs:
+  alist_data:
