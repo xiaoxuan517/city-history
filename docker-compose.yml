@@ -8,7 +8,7 @@ services:
     ports:
       - "5432:5432"
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - city_postgres_data:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U rag -d rag"]
       interval: 5s
@@ -188,7 +188,7 @@ services:
         condition: service_healthy
 
 volumes:
-  postgres_data:
+  city_postgres_data:
   app_storage:
   app_logs:
   alist_data:
